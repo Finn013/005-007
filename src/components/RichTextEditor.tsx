@@ -1,7 +1,6 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { 
   Download, 
   Upload, 
@@ -19,7 +18,9 @@ import {
   Link,
   Image,
   Table,
-  Type
+  Type,
+  Plus,
+  Minus
 } from 'lucide-react';
 import {
   Popover,
@@ -30,6 +31,9 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@/components/ui/toggle-group";
+import TableDialog from './TableDialog';
+import LinkDialog from './LinkDialog';
+import ImageDialog from './ImageDialog';
 
 interface RichTextEditorProps {
   content: string;
@@ -47,25 +51,87 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   onImport
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
+  const currentContentRef = useRef<string>(content);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
+  const [lastSavedAt, setLastSavedAt] = useState<Date>(new Date());
+  
+  // Диалоги
+  const [tableDialogOpen, setTableDialogOpen] = useState(false);
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
 
-  // Auto-save functionality
+  // Устанавливаем содержимое при изменении пропа content
+  useEffect(() => {
+    if (editorRef.current && content !== currentContentRef.current) {
+      editorRef.current.innerHTML = content;
+      currentContentRef.current = content;
+    }
+  }, [content]);
+
+  // Дебаунсированное сохранение
   useEffect(() => {
     if (autoSaveTimeoutRef.current) {
       clearTimeout(autoSaveTimeoutRef.current);
     }
     
     autoSaveTimeoutRef.current = setTimeout(() => {
-      // Auto-save logic would be handled by parent component
-      console.log('Auto-saving content...');
-    }, 2000); // Auto-save after 2 seconds of inactivity
+      if (currentContentRef.current !== content) {
+        // Сохраняем позицию курсора
+        const selection = window.getSelection();
+        let range: Range | null = null;
+        let startOffset = 0;
+        let endOffset = 0;
+        let startContainer: Node | null = null;
+        let endContainer: Node | null = null;
+
+        if (selection && selection.rangeCount > 0) {
+          range = selection.getRangeAt(0);
+          startContainer = range.startContainer;
+          endContainer = range.endContainer;
+          startOffset = range.startOffset;
+          endOffset = range.endOffset;
+        }
+
+        // Обновляем состояние
+        onChange(currentContentRef.current);
+        setLastSavedAt(new Date());
+
+        // Восстанавливаем позицию курсора после небольшой задержки
+        setTimeout(() => {
+          if (range && startContainer && endContainer && editorRef.current) {
+            try {
+              const newSelection = window.getSelection();
+              const newRange = document.createRange();
+              
+              // Проверяем, что контейнеры все еще в DOM
+              if (editorRef.current.contains(startContainer) && 
+                  editorRef.current.contains(endContainer)) {
+                newRange.setStart(startContainer, Math.min(startOffset, startContainer.textContent?.length || 0));
+                newRange.setEnd(endContainer, Math.min(endOffset, endContainer.textContent?.length || 0));
+                
+                newSelection?.removeAllRanges();
+                newSelection?.addRange(newRange);
+              }
+            } catch (error) {
+              console.log('Курсор не удалось восстановить:', error);
+            }
+          }
+        }, 10);
+      }
+    }, 500);
 
     return () => {
       if (autoSaveTimeoutRef.current) {
         clearTimeout(autoSaveTimeoutRef.current);
       }
     };
-  }, [content]);
+  }, [currentContentRef.current, content, onChange]);
+
+  const handleInput = () => {
+    if (editorRef.current) {
+      currentContentRef.current = editorRef.current.innerHTML;
+    }
+  };
 
   const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -78,38 +144,41 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const execCommand = (command: string, value?: string) => {
     document.execCommand(command, false, value);
     if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
+      currentContentRef.current = editorRef.current.innerHTML;
     }
   };
 
-  const insertTable = () => {
-    const table = `
-      <table border="1" style="border-collapse: collapse; width: 100%; margin: 10px 0;">
-        <tr>
-          <td style="padding: 8px; border: 1px solid #ddd;">Ячейка 1</td>
-          <td style="padding: 8px; border: 1px solid #ddd;">Ячейка 2</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px; border: 1px solid #ddd;">Ячейка 3</td>
-          <td style="padding: 8px; border: 1px solid #ddd;">Ячейка 4</td>
-        </tr>
-      </table>
-    `;
-    execCommand('insertHTML', table);
+  const insertTable = (rows: number, cols: number) => {
+    let tableHTML = '<table border="1" style="border-collapse: collapse; width: 100%; margin: 10px 0; table-layout: fixed;">';
+    
+    for (let i = 0; i < rows; i++) {
+      tableHTML += '<tr>';
+      for (let j = 0; j < cols; j++) {
+        tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; min-width: 100px; position: relative;">
+          <div style="min-height: 20px;">Ячейка ${i + 1}-${j + 1}</div>
+          <div style="position: absolute; top: 0; right: 0; display: none;" class="table-controls">
+            <button onclick="addTableRow(this)" style="font-size: 10px; padding: 2px;">+Р</button>
+            <button onclick="addTableCol(this)" style="font-size: 10px; padding: 2px;">+С</button>
+            <button onclick="removeTableRow(this)" style="font-size: 10px; padding: 2px;">-Р</button>
+            <button onclick="removeTableCol(this)" style="font-size: 10px; padding: 2px;">-С</button>
+          </div>
+        </td>`;
+      }
+      tableHTML += '</tr>';
+    }
+    tableHTML += '</table>';
+    
+    execCommand('insertHTML', tableHTML);
   };
 
-  const insertLink = () => {
-    const url = prompt('Введите URL:');
-    if (url) {
-      execCommand('createLink', url);
-    }
+  const insertLink = (url: string, text: string) => {
+    const linkHTML = `<a href="${url}" target="_blank" style="color: #0066cc; text-decoration: underline;">${text}</a>`;
+    execCommand('insertHTML', linkHTML);
   };
 
-  const insertImage = () => {
-    const url = prompt('Введите URL изображения:');
-    if (url) {
-      execCommand('insertImage', url);
-    }
+  const insertImage = (url: string, alt: string) => {
+    const imageHTML = `<img src="${url}" alt="${alt}" style="max-width: 100%; height: auto; margin: 10px 0;" />`;
+    execCommand('insertHTML', imageHTML);
   };
 
   const changeFontSize = (size: string) => {
@@ -123,6 +192,74 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const changeBackgroundColor = (color: string) => {
     execCommand('backColor', color);
   };
+
+  // Добавляем глобальные функции для работы с таблицами
+  useEffect(() => {
+    (window as any).addTableRow = (button: HTMLButtonElement) => {
+      const td = button.closest('td');
+      const tr = td?.closest('tr');
+      const table = tr?.closest('table');
+      if (tr && table) {
+        const newRow = tr.cloneNode(true) as HTMLElement;
+        const cells = newRow.querySelectorAll('td');
+        cells.forEach((cell, index) => {
+          const div = cell.querySelector('div');
+          if (div) div.textContent = `Новая ячейка ${index + 1}`;
+        });
+        tr.parentNode?.insertBefore(newRow, tr.nextSibling);
+        if (editorRef.current) {
+          currentContentRef.current = editorRef.current.innerHTML;
+        }
+      }
+    };
+
+    (window as any).addTableCol = (button: HTMLButtonElement) => {
+      const td = button.closest('td');
+      const table = td?.closest('table');
+      if (table) {
+        const rows = table.querySelectorAll('tr');
+        rows.forEach((row, rowIndex) => {
+          const newCell = document.createElement('td');
+          newCell.style.cssText = 'padding: 8px; border: 1px solid #ddd; min-width: 100px;';
+          newCell.innerHTML = `<div style="min-height: 20px;">Новая ${rowIndex + 1}</div>`;
+          row.appendChild(newCell);
+        });
+        if (editorRef.current) {
+          currentContentRef.current = editorRef.current.innerHTML;
+        }
+      }
+    };
+
+    (window as any).removeTableRow = (button: HTMLButtonElement) => {
+      const tr = button.closest('tr');
+      const table = tr?.closest('table');
+      if (tr && table && table.querySelectorAll('tr').length > 1) {
+        tr.remove();
+        if (editorRef.current) {
+          currentContentRef.current = editorRef.current.innerHTML;
+        }
+      }
+    };
+
+    (window as any).removeTableCol = (button: HTMLButtonElement) => {
+      const td = button.closest('td');
+      const table = td?.closest('table');
+      if (td && table) {
+        const cellIndex = Array.from(td.parentNode?.children || []).indexOf(td);
+        const rows = table.querySelectorAll('tr');
+        if (rows[0] && rows[0].children.length > 1) {
+          rows.forEach(row => {
+            if (row.children[cellIndex]) {
+              row.children[cellIndex].remove();
+            }
+          });
+          if (editorRef.current) {
+            currentContentRef.current = editorRef.current.innerHTML;
+          }
+        }
+      }
+    };
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -240,16 +377,16 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => execCommand('insertOrderedList')}
+            onClick={() => execCommand('insertUnorderedList')}
           >
-            <ListOrdered size={14} />
+            <List size={14} />
           </Button>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => execCommand('insertUnorderedList')}
+            onClick={() => execCommand('insertOrderedList')}
           >
-            <List size={14} />
+            <ListOrdered size={14} />
           </Button>
         </div>
 
@@ -358,21 +495,21 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={insertLink}
+            onClick={() => setLinkDialogOpen(true)}
           >
             <Link size={14} />
           </Button>
           <Button
             variant="outline"
             size="sm"
-            onClick={insertImage}
+            onClick={() => setImageDialogOpen(true)}
           >
             <Image size={14} />
           </Button>
           <Button
             variant="outline"
             size="sm"
-            onClick={insertTable}
+            onClick={() => setTableDialogOpen(true)}
           >
             <Table size={14} />
           </Button>
@@ -384,8 +521,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         ref={editorRef}
         contentEditable
         suppressContentEditableWarning
-        onInput={(e) => onChange(e.currentTarget.innerHTML)}
-        dangerouslySetInnerHTML={{ __html: content }}
+        onInput={handleInput}
         className="min-h-[400px] p-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
         style={{
           lineHeight: '1.6',
@@ -395,8 +531,27 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
       {/* Auto-save indicator */}
       <div className="text-xs text-muted-foreground">
-        ✓ Автосохранение включено
+        ✓ Автосохранение • Последнее сохранение: {lastSavedAt.toLocaleTimeString()}
       </div>
+
+      {/* Dialogs */}
+      <TableDialog
+        open={tableDialogOpen}
+        onOpenChange={setTableDialogOpen}
+        onInsertTable={insertTable}
+      />
+
+      <LinkDialog
+        open={linkDialogOpen}
+        onOpenChange={setLinkDialogOpen}
+        onInsertLink={insertLink}
+      />
+
+      <ImageDialog
+        open={imageDialogOpen}
+        onOpenChange={setImageDialogOpen}
+        onInsertImage={insertImage}
+      />
     </div>
   );
 };
