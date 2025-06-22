@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Plus, Menu, Share, Trash, ChevronDown } from 'lucide-react';
+import { Plus, Menu, Share, Trash, ChevronDown, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -17,6 +16,7 @@ import { AppSettings } from '../types/note';
 interface HeaderProps {
   onCreateNote: () => void;
   onCreateList: () => void;
+  onCreateEditor?: () => void;
   settings: AppSettings;
   onSettingsChange: (settings: Partial<AppSettings>) => void;
   onImportNotes: (file: File) => void;
@@ -24,18 +24,23 @@ interface HeaderProps {
   selectedCount?: number;
   onExportSelected?: () => void;
   onDeleteSelected?: () => void;
+  onBack?: () => void;
+  showBackButton?: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
   onCreateNote,
   onCreateList,
+  onCreateEditor,
   settings, 
   onSettingsChange, 
   onImportNotes,
   onExportAllNotes,
   selectedCount = 0,
   onExportSelected,
-  onDeleteSelected
+  onDeleteSelected,
+  onBack,
+  showBackButton = false
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
@@ -52,6 +57,13 @@ const Header: React.FC<HeaderProps> = ({
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-2">
+          {showBackButton && onBack && (
+            <Button variant="outline" size="sm" onClick={onBack}>
+              <ArrowLeft size={16} className="mr-2" />
+              Назад
+            </Button>
+          )}
+          
           <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="relative">
@@ -76,6 +88,11 @@ const Header: React.FC<HeaderProps> = ({
                   <DropdownMenuItem onClick={onCreateList}>
                     📋 Список
                   </DropdownMenuItem>
+                  {onCreateEditor && (
+                    <DropdownMenuItem onClick={onCreateEditor}>
+                      📄 Документ
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
               
@@ -206,6 +223,11 @@ const Header: React.FC<HeaderProps> = ({
               <DropdownMenuItem onClick={onCreateList}>
                 📋 Список
               </DropdownMenuItem>
+              {onCreateEditor && (
+                <DropdownMenuItem onClick={onCreateEditor}>
+                  📄 Документ
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
