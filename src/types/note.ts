@@ -9,8 +9,9 @@ export interface Note {
   fontSize: 'small' | 'medium' | 'large';
   isSelected: boolean;
   tags: string[];
-  type: 'note' | 'list';
+  type: 'note' | 'list' | 'editor';
   listItems?: ListItem[];
+  htmlContent?: string; // For rich text editor content
 }
 
 export interface ListItem {

@@ -1,7 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { generateUUID } from '../utils/idGenerator';
 import Header from '../components/Header';
 import NoteCard from '../components/NoteCard';
+import ModeSelector from '../components/ModeSelector';
+import EditorPage from '../components/EditorPage';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { Note, AppSettings } from '../types/note';
 import { exportNotes, importNotes } from '../utils/exportUtils';
@@ -13,21 +15,26 @@ const defaultSettings: AppSettings = {
   sortBy: 'date',
 };
 
+type ViewMode = 'selector' | 'notes' | 'editor' | 'all' | 'editing';
+
 const Index = () => {
   const [notes, setNotes] = useLocalStorage<Note[]>('sticky-notes', []);
   const [settings, setSettings] = useLocalStorage<AppSettings>('app-settings', defaultSettings);
+  const [viewMode, setViewMode] = useState<ViewMode>('selector');
+  const [editingNote, setEditingNote] = useState<Note | undefined>(undefined);
 
   useEffect(() => {
     document.documentElement.className = settings.theme;
   }, [settings.theme]);
 
-  // Миграция старых заметок для добавления новых полей
+  // Migration for existing notes to add new fields
   useEffect(() => {
     const migratedNotes = notes.map(note => ({
       ...note,
       tags: note.tags || [],
       type: note.type || 'note' as const,
-      listItems: note.listItems || undefined
+      listItems: note.listItems || undefined,
+      htmlContent: note.htmlContent || undefined
     }));
     
     const hasChanges = migratedNotes.some(note => 
@@ -72,10 +79,25 @@ const Index = () => {
     setNotes([newList, ...notes]);
   };
 
+  const createEditor = () => {
+    setEditingNote(undefined);
+    setViewMode('editing');
+  };
+
   const updateNote = (updatedNote: Note) => {
     setNotes(notes.map(note => 
       note.id === updatedNote.id ? updatedNote : note
     ));
+  };
+
+  const saveEditorNote = (note: Note) => {
+    if (editingNote) {
+      updateNote(note);
+    } else {
+      setNotes([note, ...notes]);
+    }
+    setViewMode('all');
+    setEditingNote(undefined);
   };
 
   const deleteNote = (id: string) => {
@@ -151,7 +173,6 @@ const Index = () => {
     }
   };
 
-  // Сортировка применяется только при нажатии кнопки сортировки
   const sortedNotes = settings.sortBy === 'manual' ? notes : [...notes].sort((a, b) => {
     if (settings.sortBy === 'date') {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -167,8 +188,6 @@ const Index = () => {
 
   const selectedNotes = notes.filter(note => note.isSelected);
   const selectedCount = selectedNotes.length;
-
-  // Получаем все уникальные теги
   const allTags = Array.from(new Set(notes.flatMap(note => note.tags || [])));
 
   const handleExportSelected = async () => {
@@ -200,11 +219,58 @@ const Index = () => {
     });
   };
 
+  const handleModeSelect = (mode: 'notes' | 'editor' | 'all') => {
+    if (mode === 'editor') {
+      createEditor();
+    } else {
+      setViewMode(mode);
+    }
+  };
+
+  const handleEditNote = (note: Note) => {
+    if (note.type === 'editor') {
+      setEditingNote(note);
+      setViewMode('editing');
+    }
+  };
+
+  const getFilteredNotes = () => {
+    switch (viewMode) {
+      case 'notes':
+        return sortedNotes.filter(note => note.type === 'note' || note.type === 'list');
+      case 'all':
+        return sortedNotes;
+      default:
+        return sortedNotes;
+    }
+  };
+
+  if (viewMode === 'selector') {
+    return (
+      <div className="min-h-screen bg-background">
+        <ModeSelector onSelectMode={handleModeSelect} />
+      </div>
+    );
+  }
+
+  if (viewMode === 'editing') {
+    return (
+      <EditorPage
+        onBack={() => setViewMode('selector')}
+        onSave={saveEditorNote}
+        existingNote={editingNote}
+      />
+    );
+  }
+
+  const filteredNotes = getFilteredNotes();
+
   return (
     <div className="min-h-screen bg-background">
       <Header
         onCreateNote={createNote}
         onCreateList={createList}
+        onCreateEditor={createEditor}
         settings={settings}
         onSettingsChange={updateSettings}
         onImportNotes={handleImportNotes}
@@ -212,6 +278,8 @@ const Index = () => {
         selectedCount={selectedCount}
         onExportSelected={handleExportSelected}
         onDeleteSelected={handleDeleteSelected}
+        onBack={() => setViewMode('selector')}
+        showBackButton={true}
       />
       
       <main className="container mx-auto px-4 py-6 max-w-4xl">
@@ -223,7 +291,7 @@ const Index = () => {
           </div>
         )}
         
-        {notes.length === 0 ? (
+        {filteredNotes.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">📝</div>
             <h2 className="text-xl font-semibold text-foreground mb-2">
@@ -235,7 +303,7 @@ const Index = () => {
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {sortedNotes.map(note => (
+            {filteredNotes.map(note => (
               <NoteCard
                 key={note.id}
                 note={note}
@@ -243,6 +311,7 @@ const Index = () => {
                 onDelete={deleteNote}
                 onToggleSelect={toggleSelectNote}
                 onReorder={handleReorderNotes}
+                onEdit={handleEditNote}
                 globalFontSize={settings.globalFontSize}
                 allTags={allTags}
               />

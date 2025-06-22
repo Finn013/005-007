@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Send, QrCode, Delete, Menu, Plus, X, Tag, Check, GripVertical, ChevronDown } from 'lucide-react';
+import { Copy, Send, QrCode, Delete, Menu, Plus, X, Tag, Check, GripVertical, ChevronDown, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -32,10 +32,13 @@ interface NoteCardProps {
   onUpdate: (note: Note) => void;
   onDelete: (id: string) => void;
   onToggleSelect: (id: string) => void;
+  onEdit?: (note: Note) => void;
   globalFontSize: string;
   onReorder?: (draggedId: string, targetId: string) => void;
   allTags: string[];
 }
+
+// ... keep existing code (colors, darkColors definitions)
 
 const colors = [
   '#ffffff', // белый
@@ -62,6 +65,7 @@ const NoteCard: React.FC<NoteCardProps> = ({
   onUpdate, 
   onDelete, 
   onToggleSelect,
+  onEdit,
   globalFontSize,
   onReorder,
   allTags = []
@@ -106,6 +110,8 @@ const NoteCard: React.FC<NoteCardProps> = ({
       textToCopy += note.listItems.map(item => 
         `${item.completed ? '✓' : '○'} ${item.text}`
       ).join('\n');
+    } else if (note.type === 'editor' && note.htmlContent) {
+      textToCopy += note.htmlContent.replace(/<[^>]*>/g, '');
     } else {
       textToCopy += note.content;
     }
@@ -122,6 +128,8 @@ const NoteCard: React.FC<NoteCardProps> = ({
       shareText = note.listItems.map(item => 
         `${item.completed ? '✓' : '○'} ${item.text}`
       ).join('\n');
+    } else if (note.type === 'editor' && note.htmlContent) {
+      shareText = note.htmlContent.replace(/<[^>]*>/g, '');
     }
     
     const shareData = {
@@ -186,7 +194,6 @@ const NoteCard: React.FC<NoteCardProps> = ({
       item.id === id ? { ...item, completed: !item.completed } : item
     );
     
-    // Сортируем: незавершенные сверху, завершенные снизу
     const sortedItems = updatedItems.sort((a, b) => {
       if (a.completed === b.completed) return a.order - b.order;
       return a.completed ? 1 : -1;
@@ -218,6 +225,46 @@ const NoteCard: React.FC<NoteCardProps> = ({
         description: "Не удалось экспортировать заметку",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleEditClick = () => {
+    if (note.type === 'editor' && onEdit) {
+      onEdit(note);
+    } else {
+      setIsEditing(true);
+    }
+  };
+
+  const getContentToDisplay = () => {
+    if (note.type === 'list' && note.listItems) {
+      return (
+        <div className="space-y-1">
+          {note.listItems.map(item => (
+            <div key={item.id} className={`flex items-center gap-2 ${item.completed ? 'opacity-60' : ''}`}>
+              <Check size={16} className={item.completed ? 'text-green-500' : 'text-gray-400'} />
+              <span className={item.completed ? 'line-through' : ''}>{item.text}</span>
+            </div>
+          ))}
+        </div>
+      );
+    } else if (note.type === 'editor' && note.htmlContent) {
+      return (
+        <div 
+          className="prose prose-sm max-w-none"
+          dangerouslySetInnerHTML={{ __html: note.htmlContent.slice(0, 200) + (note.htmlContent.length > 200 ? '...' : '') }}
+        />
+      );
+    } else {
+      return note.content || 'Нажмите для редактирования...';
+    }
+  };
+
+  const getTypeIcon = () => {
+    switch (note.type) {
+      case 'list': return '📋 Список';
+      case 'editor': return '📄 Документ';
+      default: return '📝 Заметка';
     }
   };
 
@@ -257,7 +304,6 @@ const NoteCard: React.FC<NoteCardProps> = ({
     const deltaY = Math.abs(touch.clientY - dragStartPos.y);
     
     if (deltaX > 10 || deltaY > 10) {
-      // Продолжаем перетаскивание
       e.preventDefault();
     }
   };
@@ -351,7 +397,7 @@ const NoteCard: React.FC<NoteCardProps> = ({
               <div className="flex-1">
                 <h3 
                   className={`font-medium truncate cursor-pointer ${fontSizeClass}`}
-                  onClick={() => setIsEditing(true)}
+                  onClick={handleEditClick}
                 >
                   {note.title || 'Без названия'}
                 </h3>
@@ -376,6 +422,15 @@ const NoteCard: React.FC<NoteCardProps> = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" side="bottom" className="bg-popover w-48">
+              {note.type === 'editor' && onEdit && (
+                <>
+                  <DropdownMenuItem onClick={() => onEdit(note)}>
+                    <Edit size={16} className="mr-2" />
+                    Редактировать
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
               <DropdownMenuItem onClick={handleCopy}>
                 <Copy size={16} className="mr-2" />
                 Копировать
@@ -448,7 +503,7 @@ const NoteCard: React.FC<NoteCardProps> = ({
 
         {/* Content */}
         <div className="p-3">
-          {isEditing ? (
+          {isEditing && note.type !== 'editor' ? (
             <div className="space-y-3">
               {note.type === 'list' ? (
                 <div className="space-y-2">
@@ -500,27 +555,16 @@ const NoteCard: React.FC<NoteCardProps> = ({
           ) : (
             <div 
               className={`whitespace-pre-wrap cursor-pointer min-h-[60px] max-h-[200px] overflow-y-auto ${fontSizeClass}`}
-              onClick={() => setIsEditing(true)}
+              onClick={handleEditClick}
             >
-              {note.type === 'list' && note.listItems ? (
-                <div className="space-y-1">
-                  {note.listItems.map(item => (
-                    <div key={item.id} className={`flex items-center gap-2 ${item.completed ? 'opacity-60' : ''}`}>
-                      <Check size={16} className={item.completed ? 'text-green-500' : 'text-gray-400'} />
-                      <span className={item.completed ? 'line-through' : ''}>{item.text}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                note.content || 'Нажмите для редактирования...'
-              )}
+              {getContentToDisplay()}
             </div>
           )}
         </div>
 
         {/* Footer */}
         <div className="px-3 pb-2 text-xs text-muted-foreground">
-          {note.type === 'list' ? '📋 Список' : '📝 Заметка'} • Создано: {new Date(note.createdAt).toLocaleString('ru')}
+          {getTypeIcon()} • Создано: {new Date(note.createdAt).toLocaleString('ru')}
         </div>
       </div>
 
@@ -532,7 +576,7 @@ const NoteCard: React.FC<NoteCardProps> = ({
           </DialogHeader>
           <div className="flex flex-col items-center space-y-4">
             <img 
-              src={generateQRCodeURL(`${note.title}\n\n${note.content}`)}
+              src={generateQRCodeURL(`${note.title}\n\n${note.type === 'editor' && note.htmlContent ? note.htmlContent.replace(/<[^>]*>/g, '') : note.content}`)}
               alt="QR Code"
               className="border rounded"
             />
