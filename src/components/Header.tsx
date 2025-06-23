@@ -1,297 +1,200 @@
 
-import React, { useState } from 'react';
-import { Plus, Menu, Share, Trash, ChevronDown, ArrowLeft, Search, X, Tag } from 'lucide-react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Plus, ArrowLeft, Settings, Search, X, Tag, ChevronDown } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { AppSettings } from '../types/note';
 
+type HeaderMode = 'selector' | 'notes' | 'tasks' | 'editor' | 'all' | 'settings';
+
 interface HeaderProps {
-  onCreateNote: () => void;
-  onCreateList: () => void;
-  onCreateEditor?: () => void;
-  settings: AppSettings;
-  onSettingsChange: (settings: Partial<AppSettings>) => void;
-  onImportNotes: (file: File) => void;
-  onExportAllNotes: () => void;
-  selectedCount?: number;
-  onExportSelected?: () => void;
-  onDeleteSelected?: () => void;
+  mode: HeaderMode;
   onBack?: () => void;
-  showBackButton?: boolean;
-  viewMode?: string;
+  onAddNote?: () => void;
+  onAddTask?: () => void;
+  onAddEditor?: () => void;
+  onSettings?: () => void;
+  onSearch?: (query: string) => void;
+  searchQuery?: string;
+  onSortChange?: (sortBy: AppSettings['sortBy']) => void;
+  currentSort?: AppSettings['sortBy'];
   allTags?: string[];
-  onTagFilter?: (tag: string | null) => void;
-  activeTagFilter?: string | null;
+  onTagSearch?: (tag: string) => void;
+  selectedTag?: string;
+  onClearTagSearch?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ 
-  onCreateNote,
-  onCreateList,
-  onCreateEditor,
-  settings, 
-  onSettingsChange, 
-  onImportNotes,
-  onExportAllNotes,
-  selectedCount = 0,
-  onExportSelected,
-  onDeleteSelected,
+const Header: React.FC<HeaderProps> = ({
+  mode,
   onBack,
-  showBackButton = false,
-  viewMode = '',
+  onAddNote,
+  onAddTask,
+  onAddEditor,
+  onSettings,
+  onSearch,
+  searchQuery = '',
+  onSortChange,
+  currentSort = 'date',
   allTags = [],
-  onTagFilter,
-  activeTagFilter
+  onTagSearch,
+  selectedTag,
+  onClearTagSearch,
 }) => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      onImportNotes(file);
-      event.target.value = '';
+  const getTitle = () => {
+    switch (mode) {
+      case 'notes':
+        return 'Быстрые заметки';
+      case 'tasks':
+        return 'Списки задач';
+      case 'editor':
+        return 'Текстовый редактор';
+      case 'all':
+        return 'Все документы';
+      case 'settings':
+        return 'Настройки';
+      default:
+        return 'Заметки';
     }
   };
 
-  const getCreateButtons = () => {
-    if (viewMode === 'tasks') {
-      return (
-        <Button onClick={onCreateList} size="sm" className="gap-2">
-          <Plus size={16} />
-          <span className="hidden sm:inline">Создать список</span>
-        </Button>
-      );
+  const getSortLabel = (sortBy: string) => {
+    switch (sortBy) {
+      case 'date': return 'По дате';
+      case 'title': return 'По названию';
+      case 'tags': return 'По тегам';
+      case 'type': return 'По категории';
+      case 'color': return 'По цвету';
+      case 'manual': return 'Вручную';
+      default: return 'По дате';
     }
-    
-    if (viewMode === 'notes') {
-      return (
-        <Button onClick={onCreateNote} size="sm" className="gap-2">
-          <Plus size={16} />
-          <span className="hidden sm:inline">Создать заметку</span>
-        </Button>
-      );
-    }
-    
-    if (viewMode === 'all') {
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size="sm" className="gap-2">
-              <Plus size={16} />
-              <span className="hidden sm:inline">Создать</span>
-              <ChevronDown size={14} />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="bg-popover">
-            <DropdownMenuItem onClick={onCreateList}>
-              📋 Список
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onCreateNote}>
-              📝 Заметку
-            </DropdownMenuItem>
-            {onCreateEditor && (
-              <DropdownMenuItem onClick={onCreateEditor}>
-                📄 Документ
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    }
-    
-    return null;
-  };
-
-  const getMenuContent = () => {
-    if (viewMode === 'tasks' || viewMode === 'notes') {
-      return (
-        <DropdownMenuContent align="start" className="w-56 bg-popover">
-          <DropdownMenuItem onClick={onExportAllNotes}>
-            📤 Экспорт
-          </DropdownMenuItem>
-          
-          <DropdownMenuItem asChild>
-            <label className="cursor-pointer">
-              📥 Импорт
-              <input
-                type="file"
-                accept=".json"
-                onChange={handleFileImport}
-                className="hidden"
-              />
-            </label>
-          </DropdownMenuItem>
-          
-          {selectedCount > 0 && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onExportSelected} className="text-primary">
-                <Share size={16} className="mr-2" />
-                Отправить выбранные ({selectedCount})
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onDeleteSelected} className="text-destructive">
-                <Trash size={16} className="mr-2" />
-                Удалить выбранные ({selectedCount})
-              </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      );
-    }
-
-    return (
-      <DropdownMenuContent align="start" className="w-56 bg-popover">
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            📊 Сортировка
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            <DropdownMenuItem
-              onClick={() => onSettingsChange({ sortBy: 'date' })}
-              className={settings.sortBy === 'date' ? 'bg-accent' : ''}
-            >
-              По дате
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onSettingsChange({ sortBy: 'title' })}
-              className={settings.sortBy === 'title' ? 'bg-accent' : ''}
-            >
-              По названию
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onSettingsChange({ sortBy: 'tags' })}
-              className={settings.sortBy === 'tags' ? 'bg-accent' : ''}
-            >
-              По тегам
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onSettingsChange({ sortBy: 'type' })}
-              className={settings.sortBy === 'type' ? 'bg-accent' : ''}
-            >
-              По категории
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onSettingsChange({ sortBy: 'color' })}
-              className={settings.sortBy === 'color' ? 'bg-accent' : ''}
-            >
-              По цвету
-            </DropdownMenuItem>
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-        
-        <DropdownMenuSeparator />
-        
-        <DropdownMenuItem onClick={onExportAllNotes}>
-          📤 Экспорт всех заметок
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem asChild>
-          <label className="cursor-pointer">
-            📥 Импорт заметок
-            <input
-              type="file"
-              accept=".json"
-              onChange={handleFileImport}
-              className="hidden"
-            />
-          </label>
-        </DropdownMenuItem>
-        
-        {selectedCount > 0 && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onExportSelected} className="text-primary">
-              <Share size={16} className="mr-2" />
-              Отправить выбранные ({selectedCount})
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onDeleteSelected} className="text-destructive">
-              <Trash size={16} className="mr-2" />
-              Удалить выбранные ({selectedCount})
-            </DropdownMenuItem>
-          </>
-        )}
-      </DropdownMenuContent>
-    );
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-      <div className="flex items-center justify-between p-4">
-        <div className="flex items-center gap-2">
-          {showBackButton && onBack && (
-            <Button variant="outline" size="sm" onClick={onBack}>
-              <ArrowLeft size={16} className="mr-2" />
-              Назад
-            </Button>
-          )}
-          
-          <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="relative">
-                <Menu size={16} />
-                {selectedCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {selectedCount}
-                  </span>
-                )}
+    <div className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            {mode !== 'selector' && (
+              <Button variant="outline" size="sm" onClick={onBack}>
+                <ArrowLeft size={16} />
               </Button>
-            </DropdownMenuTrigger>
-            {getMenuContent()}
-          </DropdownMenu>
+            )}
+            <h1 className="text-xl font-semibold">{getTitle()}</h1>
+          </div>
 
-          {viewMode === 'all' && allTags && allTags.length > 0 && onTagFilter && (
-            <>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Tag size={16} />
-                    Теги
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-48 bg-popover max-h-60 overflow-y-auto">
-                  {allTags.map(tag => (
-                    <DropdownMenuItem
-                      key={tag}
-                      onClick={() => onTagFilter(tag)}
-                      className={activeTagFilter === tag ? 'bg-accent' : ''}
-                    >
-                      <Tag size={14} className="mr-2" />
-                      {tag}
+          <div className="flex items-center gap-2">
+            {/* Search and Tag Search for All Documents */}
+            {mode === 'all' && (
+              <>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Поиск..."
+                    value={searchQuery}
+                    onChange={(e) => onSearch?.(e.target.value)}
+                    className="px-3 py-1 border rounded-md text-sm w-32"
+                  />
+                  <Search size={16} />
+                </div>
+                
+                {selectedTag ? (
+                  <div className="flex items-center gap-1 px-2 py-1 bg-primary/20 rounded-full text-xs">
+                    <Tag size={12} />
+                    {selectedTag}
+                    <button onClick={onClearTagSearch} className="text-destructive hover:text-destructive/80">
+                      <X size={12} />
+                    </button>
+                  </div>
+                ) : allTags.length > 0 && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-1">
+                        <Tag size={14} />
+                        Теги
+                        <ChevronDown size={12} />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      {allTags.map((tag) => (
+                        <DropdownMenuItem key={tag} onClick={() => onTagSearch?.(tag)}>
+                          {tag}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+
+                <Select value={currentSort} onValueChange={onSortChange}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue>{getSortLabel(currentSort)}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="date">По дате</SelectItem>
+                    <SelectItem value="title">По названию</SelectItem>
+                    <SelectItem value="tags">По тегам</SelectItem>
+                    <SelectItem value="type">По категории</SelectItem>
+                    <SelectItem value="color">По цвету</SelectItem>
+                    <SelectItem value="manual">Вручную</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" className="gap-1">
+                      <Plus size={16} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={onAddTask}>
+                      Список
                     </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    <DropdownMenuItem onClick={onAddNote}>
+                      Заметка
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={onAddEditor}>
+                      Документ
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
 
-              {activeTagFilter && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onTagFilter(null)}
-                  className="gap-2"
-                >
-                  <X size={16} />
-                  {activeTagFilter}
-                </Button>
-              )}
-            </>
-          )}
-        </div>
+            {/* Add buttons for specific modes */}
+            {mode === 'notes' && (
+              <Button onClick={onAddNote} size="sm" className="gap-2">
+                <Plus size={16} />
+                Создать заметку
+              </Button>
+            )}
 
-        <h1 className="text-xl font-bold text-foreground">📝 Заметки</h1>
-        
-        <div className="flex items-center gap-2">
-          {getCreateButtons()}
+            {mode === 'tasks' && (
+              <Button onClick={onAddTask} size="sm" className="gap-2">
+                <Plus size={16} />
+                Создать список
+              </Button>
+            )}
+
+            {mode !== 'settings' && mode !== 'selector' && (
+              <Button variant="outline" size="sm" onClick={onSettings}>
+                <Settings size={16} />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
-    </header>
+    </div>
   );
 };
 

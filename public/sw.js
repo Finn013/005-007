@@ -7,7 +7,7 @@ const getBasePath = () => {
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     return '';
   }
-  return '/sticky-note-scribe-mobile';
+  return '/005-007';
 };
 
 const BASE_PATH = getBasePath();

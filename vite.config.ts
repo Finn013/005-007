@@ -6,7 +6,7 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: mode === 'production' ? '/sticky-note-scribe-mobile/' : '/',
+  base: mode === 'production' ? '/005-007/' : '/',
   server: {
     host: "::",
     port: 8080,

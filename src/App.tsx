@@ -10,7 +10,7 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 // Определяем basename для роутера
-const basename = import.meta.env.MODE === 'production' ? '/sticky-note-scribe-mobile' : '';
+const basename = import.meta.env.MODE === 'production' ? '/005-007' : '';
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
