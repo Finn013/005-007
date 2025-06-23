@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Plus, Menu, Share, Trash, ChevronDown, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -97,52 +98,6 @@ const Header: React.FC<HeaderProps> = ({
               </DropdownMenuSub>
               
               <DropdownMenuSeparator />
-              
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  🔤 Размер шрифта
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  <DropdownMenuItem
-                    onClick={() => onSettingsChange({ globalFontSize: 'small' })}
-                    className={settings.globalFontSize === 'small' ? 'bg-accent' : ''}
-                  >
-                    Маленький
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => onSettingsChange({ globalFontSize: 'medium' })}
-                    className={settings.globalFontSize === 'medium' ? 'bg-accent' : ''}
-                  >
-                    Средний
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => onSettingsChange({ globalFontSize: 'large' })}
-                    className={settings.globalFontSize === 'large' ? 'bg-accent' : ''}
-                  >
-                    Большой
-                  </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-              
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  {settings.theme === 'light' ? '☀️' : '🌙'} Тема
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  <DropdownMenuItem
-                    onClick={() => onSettingsChange({ theme: 'light' })}
-                    className={settings.theme === 'light' ? 'bg-accent' : ''}
-                  >
-                    ☀️ Светлая
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => onSettingsChange({ theme: 'dark' })}
-                    className={settings.theme === 'dark' ? 'bg-accent' : ''}
-                  >
-                    🌙 Тёмная
-                  </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
               
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>

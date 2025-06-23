@@ -1,9 +1,11 @@
+
 import React, { useEffect, useState } from 'react';
 import { generateUUID } from '../utils/idGenerator';
 import Header from '../components/Header';
 import NoteCard from '../components/NoteCard';
 import ModeSelector from '../components/ModeSelector';
 import EditorPage from '../components/EditorPage';
+import SettingsPage from '../components/SettingsPage';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { Note, AppSettings } from '../types/note';
 import { exportNotes, importNotes } from '../utils/exportUtils';
@@ -15,7 +17,7 @@ const defaultSettings: AppSettings = {
   sortBy: 'date',
 };
 
-type ViewMode = 'selector' | 'notes' | 'editor' | 'all' | 'editing';
+type ViewMode = 'selector' | 'notes' | 'tasks' | 'editor' | 'all' | 'editing' | 'settings';
 
 const Index = () => {
   const [notes, setNotes] = useLocalStorage<Note[]>('sticky-notes', []);
@@ -219,7 +221,7 @@ const Index = () => {
     });
   };
 
-  const handleModeSelect = (mode: 'notes' | 'editor' | 'all') => {
+  const handleModeSelect = (mode: 'notes' | 'tasks' | 'editor' | 'all' | 'settings') => {
     if (mode === 'editor') {
       createEditor();
     } else {
@@ -237,7 +239,9 @@ const Index = () => {
   const getFilteredNotes = () => {
     switch (viewMode) {
       case 'notes':
-        return sortedNotes.filter(note => note.type === 'note' || note.type === 'list');
+        return sortedNotes.filter(note => note.type === 'note');
+      case 'tasks':
+        return sortedNotes.filter(note => note.type === 'list');
       case 'all':
         return sortedNotes;
       default:
@@ -263,7 +267,20 @@ const Index = () => {
     );
   }
 
+  if (viewMode === 'settings') {
+    return (
+      <SettingsPage
+        onBack={() => setViewMode('selector')}
+        settings={settings}
+        onSettingsChange={updateSettings}
+        onImportNotes={handleImportNotes}
+        onExportAllNotes={handleExportAllNotes}
+      />
+    );
+  }
+
   const filteredNotes = getFilteredNotes();
+  const isTaskView = viewMode === 'tasks';
 
   return (
     <div className="min-h-screen bg-background">
@@ -286,19 +303,23 @@ const Index = () => {
         {selectedCount > 0 && (
           <div className="mb-4 p-3 bg-primary/10 rounded-lg">
             <p className="text-sm text-primary font-medium">
-              Выбрано заметок: {selectedCount}
+              Выбрано {isTaskView ? 'списков' : 'заметок'}: {selectedCount}
             </p>
           </div>
         )}
         
         {filteredNotes.length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-6xl mb-4">📝</div>
+            <div className="text-6xl mb-4">
+              {isTaskView ? '📋' : viewMode === 'notes' ? '📝' : '📁'}
+            </div>
             <h2 className="text-xl font-semibold text-foreground mb-2">
-              Пока нет заметок
+              {isTaskView ? 'Пока нет списков задач' : 
+               viewMode === 'notes' ? 'Пока нет заметок' : 'Пока нет документов'}
             </h2>
             <p className="text-muted-foreground mb-6">
-              Создайте свою первую заметку или список, нажав кнопку "Создать"
+              {isTaskView ? 'Создайте свой первый список задач' :
+               viewMode === 'notes' ? 'Создайте свою первую заметку' : 'Создайте свой первый документ'}
             </p>
           </div>
         ) : (

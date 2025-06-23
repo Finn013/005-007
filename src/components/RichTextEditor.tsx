@@ -13,8 +13,6 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
-  ListOrdered,
-  List,
   Link,
   Image,
   Table,
@@ -33,7 +31,6 @@ import {
 } from "@/components/ui/toggle-group";
 import TableDialog from './TableDialog';
 import LinkDialog from './LinkDialog';
-import ImageDialog from './ImageDialog';
 
 interface RichTextEditorProps {
   content: string;
@@ -54,11 +51,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const currentContentRef = useRef<string>(content);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
   const [lastSavedAt, setLastSavedAt] = useState<Date>(new Date());
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Диалоги
   const [tableDialogOpen, setTableDialogOpen] = useState(false);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
-  const [imageDialogOpen, setImageDialogOpen] = useState(false);
 
   // Устанавливаем содержимое при изменении пропа content
   useEffect(() => {
@@ -141,6 +138,20 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }
   };
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const imageUrl = e.target?.result as string;
+        const imageHTML = `<img src="${imageUrl}" alt="Загруженное изображение" style="max-width: 100%; height: auto; margin: 10px 0;" />`;
+        execCommand('insertHTML', imageHTML);
+      };
+      reader.readAsDataURL(file);
+      event.target.value = '';
+    }
+  };
+
   const execCommand = (command: string, value?: string) => {
     document.execCommand(command, false, value);
     if (editorRef.current) {
@@ -156,17 +167,17 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       for (let j = 0; j < cols; j++) {
         tableHTML += `<td style="padding: 8px; border: 1px solid #ddd; min-width: 100px; position: relative;">
           <div style="min-height: 20px;">Ячейка ${i + 1}-${j + 1}</div>
-          <div style="position: absolute; top: 0; right: 0; display: none;" class="table-controls">
-            <button onclick="addTableRow(this)" style="font-size: 10px; padding: 2px;">+Р</button>
-            <button onclick="addTableCol(this)" style="font-size: 10px; padding: 2px;">+С</button>
-            <button onclick="removeTableRow(this)" style="font-size: 10px; padding: 2px;">-Р</button>
-            <button onclick="removeTableCol(this)" style="font-size: 10px; padding: 2px;">-С</button>
+          <div style="position: absolute; top: 2px; right: 2px; display: flex; gap: 1px; opacity: 0.7;" class="table-controls">
+            <button onclick="addTableRow(this)" style="font-size: 10px; padding: 1px 3px; background: #007bff; color: white; border: none; border-radius: 2px; cursor: pointer;" title="Добавить строку">+Р</button>
+            <button onclick="addTableCol(this)" style="font-size: 10px; padding: 1px 3px; background: #28a745; color: white; border: none; border-radius: 2px; cursor: pointer;" title="Добавить столбец">+С</button>
+            <button onclick="removeTableRow(this)" style="font-size: 10px; padding: 1px 3px; background: #dc3545; color: white; border: none; border-radius: 2px; cursor: pointer;" title="Удалить строку">-Р</button>
+            <button onclick="removeTableCol(this)" style="font-size: 10px; padding: 1px 3px; background: #6c757d; color: white; border: none; border-radius: 2px; cursor: pointer;" title="Удалить столбец">-С</button>
           </div>
         </td>`;
       }
       tableHTML += '</tr>';
     }
-    tableHTML += '</table>';
+    tableHTML += '</table><br>';
     
     execCommand('insertHTML', tableHTML);
   };
@@ -174,11 +185,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const insertLink = (url: string, text: string) => {
     const linkHTML = `<a href="${url}" target="_blank" style="color: #0066cc; text-decoration: underline;">${text}</a>`;
     execCommand('insertHTML', linkHTML);
-  };
-
-  const insertImage = (url: string, alt: string) => {
-    const imageHTML = `<img src="${url}" alt="${alt}" style="max-width: 100%; height: auto; margin: 10px 0;" />`;
-    execCommand('insertHTML', imageHTML);
   };
 
   const changeFontSize = (size: string) => {
@@ -220,8 +226,14 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         const rows = table.querySelectorAll('tr');
         rows.forEach((row, rowIndex) => {
           const newCell = document.createElement('td');
-          newCell.style.cssText = 'padding: 8px; border: 1px solid #ddd; min-width: 100px;';
-          newCell.innerHTML = `<div style="min-height: 20px;">Новая ${rowIndex + 1}</div>`;
+          newCell.style.cssText = 'padding: 8px; border: 1px solid #ddd; min-width: 100px; position: relative;';
+          newCell.innerHTML = `<div style="min-height: 20px;">Новая ${rowIndex + 1}</div>
+            <div style="position: absolute; top: 2px; right: 2px; display: flex; gap: 1px; opacity: 0.7;" class="table-controls">
+              <button onclick="addTableRow(this)" style="font-size: 10px; padding: 1px 3px; background: #007bff; color: white; border: none; border-radius: 2px; cursor: pointer;" title="Добавить строку">+Р</button>
+              <button onclick="addTableCol(this)" style="font-size: 10px; padding: 1px 3px; background: #28a745; color: white; border: none; border-radius: 2px; cursor: pointer;" title="Добавить столбец">+С</button>
+              <button onclick="removeTableRow(this)" style="font-size: 10px; padding: 1px 3px; background: #dc3545; color: white; border: none; border-radius: 2px; cursor: pointer;" title="Удалить строку">-Р</button>
+              <button onclick="removeTableCol(this)" style="font-size: 10px; padding: 1px 3px; background: #6c757d; color: white; border: none; border-radius: 2px; cursor: pointer;" title="Удалить столбец">-С</button>
+            </div>`;
           row.appendChild(newCell);
         });
         if (editorRef.current) {
@@ -372,26 +384,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
         <div className="border-r h-8 mx-1"></div>
 
-        {/* Lists */}
-        <div className="flex gap-1">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => execCommand('insertUnorderedList')}
-          >
-            <List size={14} />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => execCommand('insertOrderedList')}
-          >
-            <ListOrdered size={14} />
-          </Button>
-        </div>
-
-        <div className="border-r h-8 mx-1"></div>
-
         {/* Font size */}
         <Popover>
           <PopoverTrigger asChild>
@@ -502,9 +494,18 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setImageDialogOpen(true)}
+            asChild
           >
-            <Image size={14} />
+            <label className="cursor-pointer">
+              <Image size={14} />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            </label>
           </Button>
           <Button
             variant="outline"
@@ -545,12 +546,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         open={linkDialogOpen}
         onOpenChange={setLinkDialogOpen}
         onInsertLink={insertLink}
-      />
-
-      <ImageDialog
-        open={imageDialogOpen}
-        onOpenChange={setImageDialogOpen}
-        onInsertImage={insertImage}
       />
     </div>
   );
