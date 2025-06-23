@@ -282,6 +282,11 @@ const Index = () => {
     return filtered;
   };
 
+  const handleSearchQuery = (query: string) => {
+    // Handle search functionality if needed
+    console.log('Search query:', query);
+  };
+
   if (viewMode === 'selector') {
     return (
       <div className="min-h-screen bg-background">
@@ -318,22 +323,20 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header
-        onCreateNote={createNote}
-        onCreateList={createList}
-        onCreateEditor={createEditor}
-        settings={settings}
-        onSettingsChange={updateSettings}
-        onImportNotes={handleImportNotes}
-        onExportAllNotes={handleExportAllNotes}
-        selectedCount={selectedCount}
-        onExportSelected={handleExportSelected}
-        onDeleteSelected={handleDeleteSelected}
+        mode={viewMode}
         onBack={() => setViewMode('selector')}
-        showBackButton={true}
-        viewMode={viewMode}
+        onAddNote={createNote}
+        onAddTask={createList}
+        onAddEditor={createEditor}
+        onSettings={() => setViewMode('settings')}
+        onSearch={handleSearchQuery}
+        searchQuery=""
+        onSortChange={(sortBy) => updateSettings({ sortBy })}
+        currentSort={settings.sortBy}
         allTags={allTags}
-        onTagFilter={handleTagFilter}
-        activeTagFilter={activeTagFilter}
+        onTagSearch={handleTagFilter}
+        selectedTag={activeTagFilter}
+        onClearTagSearch={() => setActiveTagFilter(null)}
       />
       
       <main className="container mx-auto px-4 py-6 max-w-4xl">
