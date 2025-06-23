@@ -64,6 +64,44 @@ const EditorPage: React.FC<EditorPageProps> = ({ onBack, onSave, existingNote })
     }
   };
 
+  const handleExportHTML = () => {
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title || 'document'}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportTXT = () => {
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title || 'document'}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const fileContent = e.target?.result as string;
+      if (file.type === 'text/html') {
+        setHtmlContent(fileContent);
+        // Extract plain text from HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = fileContent;
+        setContent(tempDiv.textContent || tempDiv.innerText || '');
+      } else {
+        setContent(fileContent);
+        setHtmlContent(fileContent);
+      }
+    };
+    reader.readAsText(file);
+  };
+
   // Get all existing tags (this would typically come from props or context)
   const allExistingTags: string[] = []; // You might want to pass this as a prop
 
@@ -133,6 +171,9 @@ const EditorPage: React.FC<EditorPageProps> = ({ onBack, onSave, existingNote })
             setHtmlContent(newHtmlContent);
             setContent(newPlainText);
           }}
+          onExportHTML={handleExportHTML}
+          onExportTXT={handleExportTXT}
+          onImport={handleImport}
         />
       </div>
     </div>
