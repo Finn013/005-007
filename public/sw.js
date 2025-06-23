@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'sticky-notes-v1';
+const CACHE_NAME = 'sticky-notes-v2';
 
 // Определяем базовый путь в зависимости от окружения
 const getBasePath = () => {
@@ -15,7 +15,9 @@ const BASE_PATH = getBasePath();
 const urlsToCache = [
   `${BASE_PATH}/`,
   `${BASE_PATH}/index.html`,
-  `${BASE_PATH}/manifest.json`
+  `${BASE_PATH}/manifest.json`,
+  // Добавляем ресурсы для EasyMDE
+  `${BASE_PATH}/assets/easymde.min.css`,
 ];
 
 self.addEventListener('install', (event) => {
@@ -24,7 +26,6 @@ self.addEventListener('install', (event) => {
       .then((cache) => {
         return cache.addAll(urlsToCache).catch((error) => {
           console.log('Некоторые ресурсы не удалось закэшировать:', error);
-          // Кэшируем основные файлы по отдельности
           return Promise.allSettled(
             urlsToCache.map(url => cache.add(url))
           );
@@ -50,7 +51,6 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Игнорируем запросы к Chrome Extension и внешним ресурсам
   if (event.request.url.includes('chrome-extension://') || 
       event.request.url.includes('retagro.com') ||
       !event.request.url.startsWith(self.location.origin)) {
@@ -60,22 +60,18 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
-        // Возвращаем кэшированную версию или загружаем из сети
         if (response) {
           return response;
         }
         
         return fetch(event.request).catch(() => {
-          // Если офлайн и запрашивается HTML страница, возвращаем главную
           if (event.request.destination === 'document') {
             return caches.match(`${BASE_PATH}/`);
           }
-          // Для других ресурсов возвращаем пустой ответ вместо ошибки
           return new Response('', { status: 200 });
         });
       })
       .catch(() => {
-        // В случае любой ошибки возвращаем пустой ответ
         return new Response('', { status: 200 });
       })
   );

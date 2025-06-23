@@ -2,11 +2,18 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Save, Tag, Plus, X } from 'lucide-react';
+import { ArrowLeft, Save, Tag, Plus, X, FileText, Code } from 'lucide-react';
 import RichTextEditor from './RichTextEditor';
+import MarkdownEditor from './MarkdownEditor';
 import TagSelector from './TagSelector';
 import { Note } from '../types/note';
 import { generateUUID } from '../utils/idGenerator';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 interface EditorPageProps {
   onBack: () => void;
@@ -18,15 +25,19 @@ const EditorPage: React.FC<EditorPageProps> = ({ onBack, onSave, existingNote })
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [htmlContent, setHtmlContent] = useState('');
+  const [markdownContent, setMarkdownContent] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
+  const [editorType, setEditorType] = useState<'rich' | 'markdown'>('rich');
 
   useEffect(() => {
     if (existingNote) {
       setTitle(existingNote.title);
       setContent(existingNote.content);
       setHtmlContent(existingNote.htmlContent || '');
+      setMarkdownContent(existingNote.markdownContent || existingNote.content);
       setTags(existingNote.tags || []);
+      setEditorType(existingNote.editorType || 'rich');
     }
   }, [existingNote]);
 
@@ -36,6 +47,8 @@ const EditorPage: React.FC<EditorPageProps> = ({ onBack, onSave, existingNote })
       title: title || 'Без названия',
       content,
       htmlContent,
+      markdownContent,
+      editorType,
       createdAt: existingNote?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       color: existingNote?.color || '#ffffff',
@@ -65,7 +78,8 @@ const EditorPage: React.FC<EditorPageProps> = ({ onBack, onSave, existingNote })
   };
 
   const handleExportHTML = () => {
-    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const exportContent = editorType === 'markdown' ? htmlContent : htmlContent;
+    const blob = new Blob([exportContent], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -75,7 +89,8 @@ const EditorPage: React.FC<EditorPageProps> = ({ onBack, onSave, existingNote })
   };
 
   const handleExportTXT = () => {
-    const blob = new Blob([content], { type: 'text/plain' });
+    const exportContent = editorType === 'markdown' ? markdownContent : content;
+    const blob = new Blob([exportContent], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -88,23 +103,40 @@ const EditorPage: React.FC<EditorPageProps> = ({ onBack, onSave, existingNote })
     const reader = new FileReader();
     reader.onload = (e) => {
       const fileContent = e.target?.result as string;
-      if (file.type === 'text/html') {
+      if (file.name.endsWith('.md')) {
+        setMarkdownContent(fileContent);
+        setContent(fileContent);
+        setEditorType('markdown');
+      } else if (file.type === 'text/html') {
         setHtmlContent(fileContent);
-        // Extract plain text from HTML
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = fileContent;
         setContent(tempDiv.textContent || tempDiv.innerText || '');
+        setEditorType('rich');
       } else {
         setContent(fileContent);
-        setHtmlContent(fileContent);
+        if (editorType === 'markdown') {
+          setMarkdownContent(fileContent);
+        } else {
+          setHtmlContent(fileContent);
+        }
       }
     };
     reader.readAsText(file);
   };
 
-  // Get all existing tags (this would typically come from props or context)
-  const allExistingTags: string[] = []; // You might want to pass this as a prop
+  const handleRichTextChange = (newHtmlContent: string, newPlainText: string) => {
+    setHtmlContent(newHtmlContent);
+    setContent(newPlainText);
+  };
 
+  const handleMarkdownChange = (newHtmlContent: string, newPlainText: string, newMarkdownContent: string) => {
+    setHtmlContent(newHtmlContent);
+    setContent(newPlainText);
+    setMarkdownContent(newMarkdownContent);
+  };
+
+  const allExistingTags: string[] = [];
   const availableTags = allExistingTags.filter(tag => !tags.includes(tag));
 
   return (
@@ -165,16 +197,39 @@ const EditorPage: React.FC<EditorPageProps> = ({ onBack, onSave, existingNote })
       </div>
 
       <div className="container mx-auto px-4 py-6">
-        <RichTextEditor
-          content={htmlContent}
-          onChange={(newHtmlContent, newPlainText) => {
-            setHtmlContent(newHtmlContent);
-            setContent(newPlainText);
-          }}
-          onExportHTML={handleExportHTML}
-          onExportTXT={handleExportTXT}
-          onImport={handleImport}
-        />
+        <Tabs value={editorType} onValueChange={(value) => setEditorType(value as 'rich' | 'markdown')}>
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="rich" className="gap-2">
+              <FileText size={16} />
+              Богатый редактор
+            </TabsTrigger>
+            <TabsTrigger value="markdown" className="gap-2">
+              <Code size={16} />
+              Markdown редактор
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="rich">
+            <RichTextEditor
+              content={htmlContent}
+              onChange={handleRichTextChange}
+              onExportHTML={handleExportHTML}
+              onExportTXT={handleExportTXT}
+              onImport={handleImport}
+            />
+          </TabsContent>
+          
+          <TabsContent value="markdown">
+            <MarkdownEditor
+              content={markdownContent}
+              onChange={handleMarkdownChange}
+              onExportHTML={handleExportHTML}
+              onExportTXT={handleExportTXT}
+              onImport={handleImport}
+              onSave={handleSave}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
