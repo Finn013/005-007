@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -34,7 +33,7 @@ import LinkDialog from './LinkDialog';
 
 interface RichTextEditorProps {
   content: string;
-  onChange: (content: string) => void;
+  onChange: (htmlContent: string, plainText: string) => void;
   onExportHTML: () => void;
   onExportTXT: () => void;
   onImport: (file: File) => void;
@@ -90,7 +89,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         }
 
         // Обновляем состояние
-        onChange(currentContentRef.current);
+        onChange(currentContentRef.current, editorRef.current?.textContent || '');
         setLastSavedAt(new Date());
 
         // Восстанавливаем позицию курсора после небольшой задержки

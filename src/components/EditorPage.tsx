@@ -129,9 +129,9 @@ const EditorPage: React.FC<EditorPageProps> = ({ onBack, onSave, existingNote })
       <div className="container mx-auto px-4 py-6">
         <RichTextEditor
           content={htmlContent}
-          onChange={(newContent, plainText) => {
-            setHtmlContent(newContent);
-            setContent(plainText);
+          onChange={(newHtmlContent, newPlainText) => {
+            setHtmlContent(newHtmlContent);
+            setContent(newPlainText);
           }}
         />
       </div>
