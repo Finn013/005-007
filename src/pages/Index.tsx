@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { generateUUID } from '../utils/idGenerator';
 import Header from '../components/Header';
@@ -24,10 +23,21 @@ const Index = () => {
   const [settings, setSettings] = useLocalStorage<AppSettings>('app-settings', defaultSettings);
   const [viewMode, setViewMode] = useState<ViewMode>('selector');
   const [editingNote, setEditingNote] = useState<Note | undefined>(undefined);
+  const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
 
   useEffect(() => {
     document.documentElement.className = settings.theme;
-  }, [settings.theme]);
+    
+    // Apply global font size
+    const fontSizeClasses = {
+      small: 'text-sm',
+      medium: 'text-base',
+      large: 'text-lg'
+    };
+    
+    document.documentElement.style.fontSize = settings.globalFontSize === 'small' ? '14px' : 
+                                               settings.globalFontSize === 'large' ? '18px' : '16px';
+  }, [settings.theme, settings.globalFontSize]);
 
   // Migration for existing notes to add new fields
   useEffect(() => {
@@ -184,6 +194,11 @@ const Index = () => {
       const aTagString = a.tags?.join(' ') || '';
       const bTagString = b.tags?.join(' ') || '';
       return aTagString.localeCompare(bTagString, 'ru', { sensitivity: 'base' });
+    } else if (settings.sortBy === 'type') {
+      const typeOrder = { 'list': 0, 'note': 1, 'editor': 2 };
+      return typeOrder[a.type] - typeOrder[b.type];
+    } else if (settings.sortBy === 'color') {
+      return a.color.localeCompare(b.color);
     }
     return 0;
   });
@@ -226,6 +241,7 @@ const Index = () => {
       createEditor();
     } else {
       setViewMode(mode);
+      setActiveTagFilter(null); // Reset tag filter when changing modes
     }
   };
 
@@ -236,17 +252,34 @@ const Index = () => {
     }
   };
 
+  const handleTagFilter = (tag: string | null) => {
+    setActiveTagFilter(tag);
+  };
+
   const getFilteredNotes = () => {
+    let filtered = sortedNotes;
+    
+    // Filter by view mode
     switch (viewMode) {
       case 'notes':
-        return sortedNotes.filter(note => note.type === 'note');
+        filtered = filtered.filter(note => note.type === 'note');
+        break;
       case 'tasks':
-        return sortedNotes.filter(note => note.type === 'list');
+        filtered = filtered.filter(note => note.type === 'list');
+        break;
       case 'all':
-        return sortedNotes;
+        // Show all
+        break;
       default:
-        return sortedNotes;
+        break;
     }
+    
+    // Filter by active tag
+    if (activeTagFilter) {
+      filtered = filtered.filter(note => note.tags?.includes(activeTagFilter));
+    }
+    
+    return filtered;
   };
 
   if (viewMode === 'selector') {
@@ -297,6 +330,10 @@ const Index = () => {
         onDeleteSelected={handleDeleteSelected}
         onBack={() => setViewMode('selector')}
         showBackButton={true}
+        viewMode={viewMode}
+        allTags={allTags}
+        onTagFilter={handleTagFilter}
+        activeTagFilter={activeTagFilter}
       />
       
       <main className="container mx-auto px-4 py-6 max-w-4xl">
@@ -307,18 +344,29 @@ const Index = () => {
             </p>
           </div>
         )}
+
+        {activeTagFilter && (
+          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">
+              Показаны документы с тегом: "{activeTagFilter}"
+            </p>
+          </div>
+        )}
         
         {filteredNotes.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">
-              {isTaskView ? '📋' : viewMode === 'notes' ? '📝' : '📁'}
+              {activeTagFilter ? '🏷️' : 
+               isTaskView ? '📋' : viewMode === 'notes' ? '📝' : '📁'}
             </div>
             <h2 className="text-xl font-semibold text-foreground mb-2">
-              {isTaskView ? 'Пока нет списков задач' : 
+              {activeTagFilter ? `Нет документов с тегом "${activeTagFilter}"` :
+               isTaskView ? 'Пока нет списков задач' : 
                viewMode === 'notes' ? 'Пока нет заметок' : 'Пока нет документов'}
             </h2>
             <p className="text-muted-foreground mb-6">
-              {isTaskView ? 'Создайте свой первый список задач' :
+              {activeTagFilter ? 'Попробуйте выбрать другой тег или создать новый документ' :
+               isTaskView ? 'Создайте свой первый список задач' :
                viewMode === 'notes' ? 'Создайте свою первую заметку' : 'Создайте свой первый документ'}
             </p>
           </div>

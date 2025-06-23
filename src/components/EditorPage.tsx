@@ -1,12 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Tag, Plus, X } from 'lucide-react';
 import RichTextEditor from './RichTextEditor';
+import TagSelector from './TagSelector';
 import { Note } from '../types/note';
 import { generateUUID } from '../utils/idGenerator';
-import { toast } from '@/hooks/use-toast';
 
 interface EditorPageProps {
   onBack: () => void;
@@ -15,142 +15,126 @@ interface EditorPageProps {
 }
 
 const EditorPage: React.FC<EditorPageProps> = ({ onBack, onSave, existingNote }) => {
-  const [title, setTitle] = useState(existingNote?.title || '');
-  const [content, setContent] = useState(existingNote?.htmlContent || '');
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [htmlContent, setHtmlContent] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [newTag, setNewTag] = useState('');
+
+  useEffect(() => {
+    if (existingNote) {
+      setTitle(existingNote.title);
+      setContent(existingNote.content);
+      setHtmlContent(existingNote.htmlContent || '');
+      setTags(existingNote.tags || []);
+    }
+  }, [existingNote]);
 
   const handleSave = () => {
-    if (!title.trim()) {
-      toast({
-        title: "Ошибка",
-        description: "Введите название документа",
-        variant: "destructive",
-      });
-      return;
-    }
-
     const note: Note = {
       id: existingNote?.id || generateUUID(),
-      title: title.trim(),
-      content: content.replace(/<[^>]*>/g, ''), // Plain text for search
-      htmlContent: content,
+      title: title || 'Без названия',
+      content,
+      htmlContent,
       createdAt: existingNote?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       color: existingNote?.color || '#ffffff',
       fontSize: existingNote?.fontSize || 'medium',
       isSelected: false,
-      tags: existingNote?.tags || [],
+      tags,
       type: 'editor',
     };
-
     onSave(note);
-    toast({
-      title: "Документ сохранён",
-      description: "Документ успешно сохранён",
-    });
   };
 
-  const exportAsHTML = () => {
-    const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>${title}</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-        table { border-collapse: collapse; width: 100%; margin: 10px 0; }
-        td, th { border: 1px solid #ddd; padding: 8px; }
-    </style>
-</head>
-<body>
-    <h1>${title}</h1>
-    ${content}
-</body>
-</html>`;
-
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${title.replace(/[^a-zA-Z0-9\u0400-\u04FF]/g, '_')}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const addTag = () => {
+    if (newTag.trim() && !tags.includes(newTag.trim())) {
+      setTags([...tags, newTag.trim()]);
+      setNewTag('');
+    }
   };
 
-  const exportAsTXT = () => {
-    const textContent = content.replace(/<[^>]*>/g, '').replace(/\n\s*\n/g, '\n');
-    const blob = new Blob([`${title}\n\n${textContent}`], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${title.replace(/[^a-zA-Z0-9\u0400-\u04FF]/g, '_')}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
-  const handleImport = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = e.target?.result as string;
-      if (file.type === 'text/html' || file.name.endsWith('.html')) {
-        setContent(content);
-      } else if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
-        setContent(content.replace(/\n/g, '<br>'));
-      } else if (file.type === 'application/json' || file.name.endsWith('.json')) {
-        try {
-          const data = JSON.parse(content);
-          if (data.title) setTitle(data.title);
-          if (data.content) setContent(data.content);
-        } catch (error) {
-          toast({
-            title: "Ошибка импорта",
-            description: "Неверный формат JSON файла",
-            variant: "destructive",
-          });
-        }
-      }
-    };
-    reader.readAsText(file);
+  const addExistingTag = (tag: string) => {
+    if (!tags.includes(tag)) {
+      setTags([...tags, tag]);
+    }
   };
+
+  // Get all existing tags (this would typically come from props or context)
+  const allExistingTags: string[] = []; // You might want to pass this as a prop
+
+  const availableTags = allExistingTags.filter(tag => !tags.includes(tag));
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 py-3 max-w-6xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onBack}
-              >
-                <ArrowLeft size={16} className="mr-2" />
-                Назад
-              </Button>
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Название документа..."
-                className="max-w-md"
-              />
-            </div>
-            <Button onClick={handleSave}>
-              <Save size={16} className="mr-2" />
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-4">
+            <Button variant="outline" onClick={onBack} className="gap-2">
+              <ArrowLeft size={16} />
+              Назад
+            </Button>
+            <Button onClick={handleSave} className="gap-2">
+              <Save size={16} />
               Сохранить
             </Button>
+          </div>
+          
+          <div className="space-y-3">
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Название документа"
+              className="text-lg font-medium"
+            />
+            
+            <div className="flex flex-wrap gap-2 items-center">
+              {tags.map(tag => (
+                <span key={tag} className="inline-flex items-center gap-1 px-2 py-1 bg-primary/20 rounded-full text-xs">
+                  <Tag size={12} />
+                  {tag}
+                  <button onClick={() => removeTag(tag)} className="text-destructive hover:text-destructive/80">
+                    <X size={12} />
+                  </button>
+                </span>
+              ))}
+              
+              <div className="flex items-center gap-1">
+                <Input
+                  value={newTag}
+                  onChange={(e) => setNewTag(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && addTag()}
+                  placeholder="Новый тег"
+                  className="h-7 text-xs w-24"
+                />
+                <Button onClick={addTag} size="sm" className="h-7 w-7 p-0">
+                  <Plus size={12} />
+                </Button>
+                {availableTags.length > 0 && (
+                  <TagSelector 
+                    availableTags={availableTags}
+                    onSelectTag={addExistingTag}
+                  />
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <main className="container mx-auto px-4 py-6 max-w-6xl">
+      <div className="container mx-auto px-4 py-6">
         <RichTextEditor
-          content={content}
-          onChange={setContent}
-          onExportHTML={exportAsHTML}
-          onExportTXT={exportAsTXT}
-          onImport={handleImport}
+          content={htmlContent}
+          onChange={(newContent, plainText) => {
+            setHtmlContent(newContent);
+            setContent(plainText);
+          }}
         />
-      </main>
+      </div>
     </div>
   );
 };
