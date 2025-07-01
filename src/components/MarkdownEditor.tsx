@@ -1,9 +1,8 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import EasyMDE from 'easymde';
 import 'easymde/dist/easymde.min.css';
 import { Button } from '@/components/ui/button';
-import { FileText, FileCode, Upload, Save, Link, Image, Table, Type } from 'lucide-react';
+import { FileText, FileCode, Upload, Save, Link, Image, Table, Type, Settings, Plus } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
@@ -41,12 +40,21 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [showTableDialog, setShowTableDialog] = useState(false);
+  const [showSymbolDialog, setShowSymbolDialog] = useState(false);
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [linkText, setLinkText] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
   const [imageAlt, setImageAlt] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [tableRows, setTableRows] = useState(3);
   const [tableCols, setTableCols] = useState(3);
+  const [customSymbol, setCustomSymbol] = useState('');
+  const [commonSymbols, setCommonSymbols] = useState([
+    '★', '☆', '✓', '✗', '✕', '⚠️', '🔥', '💡', '📝', '📋',
+    '⭐', '💯', '🎯', '🚀', '⚡', '🔔', '❤️', '👍', '👎', '🎉',
+    '→', '←', '↑', '↓', '⇒', '⇐', '↔️', '⇔️', '➡️', '⬅️',
+    '•', '◦', '▪', '▫', '■', '□', '●', '○', '♦', '◊'
+  ]);
 
   useEffect(() => {
     if (textareaRef.current && !editorInstanceRef.current) {
@@ -54,8 +62,21 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         element: textareaRef.current,
         autoDownloadFontAwesome: false,
         spellChecker: false,
-        status: false,
+        status: ['autosave', 'lines', 'words', 'cursor'],
         toolbar: [
+          {
+            name: 'undo',
+            action: EasyMDE.undo,
+            className: 'fa fa-undo no-disable',
+            title: 'Отменить',
+          },
+          {
+            name: 'redo',
+            action: EasyMDE.redo,
+            className: 'fa fa-repeat no-disable',
+            title: 'Повторить',
+          },
+          '|',
           'bold',
           'italic',
           'strikethrough',
@@ -84,6 +105,12 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         renderingConfig: {
           singleLineBreaks: false,
           codeSyntaxHighlighting: true,
+        },
+        shortcuts: {
+          drawTable: 'Cmd-Alt-T',
+          togglePreview: 'Cmd-P',
+          toggleSideBySide: 'F9',
+          toggleFullScreen: 'F11'
         },
       });
 
@@ -171,6 +198,18 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     }
   };
 
+  const insertSymbol = (symbol: string) => {
+    insertText(symbol);
+  };
+
+  const insertCustomSymbol = () => {
+    if (customSymbol.trim()) {
+      insertText(customSymbol);
+      setCustomSymbol('');
+      setShowSymbolDialog(false);
+    }
+  };
+
   const handleInsertLink = () => {
     if (linkText && linkUrl) {
       insertText(`[${linkText}](${linkUrl})`);
@@ -192,21 +231,18 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   const handleInsertTable = () => {
     let tableMarkdown = '\n';
     
-    // Header
     tableMarkdown += '|';
     for (let i = 1; i <= tableCols; i++) {
       tableMarkdown += ` Заголовок ${i} |`;
     }
     tableMarkdown += '\n';
     
-    // Separator
     tableMarkdown += '|';
     for (let i = 0; i < tableCols; i++) {
       tableMarkdown += ' --- |';
     }
     tableMarkdown += '\n';
     
-    // Rows
     for (let i = 1; i < tableRows; i++) {
       tableMarkdown += '|';
       for (let j = 1; j <= tableCols; j++) {
@@ -231,33 +267,33 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Расширенная панель инструментов */}
-      <div className="flex flex-wrap gap-2 p-3 border rounded-lg bg-muted/50">
-        {/* Export/Import buttons */}
-        <div className="flex gap-1 border-r pr-2 mr-2">
+      {/* Объединённая панель инструментов */}
+      <div className="flex flex-wrap gap-2 p-4 border-2 border-gray-300 rounded-lg bg-muted/50">
+        {/* Export/Import */}
+        <div className="flex gap-2 border-r-2 border-gray-300 pr-3 mr-3">
           <Button
             variant="outline"
             size="sm"
             onClick={onExportHTML}
-            className="gap-1"
+            className="gap-2 border-2 border-gray-400 hover:border-gray-600"
           >
-            <FileCode size={14} />
+            <FileCode size={16} />
             HTML
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={onExportTXT}
-            className="gap-1"
+            className="gap-2 border-2 border-gray-400 hover:border-gray-600"
           >
-            <FileText size={14} />
+            <FileText size={16} />
             TXT
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={handleExportMarkdown}
-            className="gap-1"
+            className="gap-2 border-2 border-gray-400 hover:border-gray-600"
           >
             📝 MD
           </Button>
@@ -265,10 +301,10 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
             variant="outline"
             size="sm"
             asChild
-            className="gap-1"
+            className="gap-2 border-2 border-gray-400 hover:border-gray-600"
           >
             <label className="cursor-pointer">
-              <Upload size={14} />
+              <Upload size={16} />
               Импорт
               <input
                 type="file"
@@ -280,113 +316,164 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           </Button>
         </div>
 
-        {/* Insert options */}
-        <div className="flex gap-1 border-r pr-2 mr-2">
+        {/* Insert Tools */}
+        <div className="flex gap-2 border-r-2 border-gray-300 pr-3 mr-3">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowLinkDialog(true)}
-            className="gap-1"
+            className="gap-2 border-2 border-blue-400 hover:border-blue-600"
           >
-            <Link size={14} />
+            <Link size={16} />
             Ссылка
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowImageDialog(true)}
-            className="gap-1"
+            className="gap-2 border-2 border-green-400 hover:border-green-600"
           >
-            <Image size={14} />
+            <Image size={16} />
             Изображение
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowTableDialog(true)}
-            className="gap-1"
+            className="gap-2 border-2 border-purple-400 hover:border-purple-600"
           >
-            <Table size={14} />
+            <Table size={16} />
             Таблица
           </Button>
         </div>
 
-        {/* Font color */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-1">
-              🎨 Цвет
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-48">
-            <div className="grid grid-cols-6 gap-1">
-              {[
-                '#000000', '#333333', '#666666', '#999999', '#cccccc', '#ffffff',
-                '#ff0000', '#ff6600', '#ffcc00', '#00ff00', '#0066ff', '#6600ff',
-                '#ff3366', '#ff9933', '#ffff00', '#33ff33', '#3366ff', '#9933ff'
-              ].map((color) => (
-                <Button
-                  key={color}
-                  size="sm"
-                  className="w-6 h-6 p-0"
-                  style={{ backgroundColor: color }}
-                  onClick={() => changeFontColor(color)}
-                />
-              ))}
-            </div>
-            <div className="mt-2">
-              <input
-                type="color"
-                onChange={(e) => changeFontColor(e.target.value)}
-                className="w-full h-8 rounded border"
-              />
-            </div>
-          </PopoverContent>
-        </Popover>
-
-        {/* Background color */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-1">
-              🖍️ Фон
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-48">
-            <div className="grid grid-cols-6 gap-1">
-              {[
-                '#ffffff', '#ffeeee', '#eeffee', '#eeeeff', '#ffffee', '#ffeeFF',
-                '#ffcccc', '#ccffcc', '#ccccff', '#ffffcc', '#ffccff', '#ccffff'
-              ].map((color) => (
-                <Button
-                  key={color}
-                  size="sm"
-                  className="w-6 h-6 p-0"
-                  style={{ backgroundColor: color }}
-                  onClick={() => changeBackgroundColor(color)}
-                />
-              ))}
-            </div>
-            <div className="mt-2">
-              <input
-                type="color"
-                onChange={(e) => changeBackgroundColor(e.target.value)}
-                className="w-full h-8 rounded border"
-              />
-            </div>
-          </PopoverContent>
-        </Popover>
-
-        {onSave && (
+        {/* Symbol Tools */}
+        <div className="flex gap-2 border-r-2 border-gray-300 pr-3 mr-3">
           <Button
             variant="outline"
             size="sm"
-            onClick={onSave}
-            className="gap-1 ml-auto"
+            onClick={() => {
+              const symbol = prompt('Введите символ для вставки:');
+              if (symbol) insertSymbol(symbol);
+            }}
+            className="gap-2 border-2 border-yellow-400 hover:border-yellow-600"
           >
-            <Save size={14} />
-            Сохранить
+            <Type size={16} />
+            Вставить символ
           </Button>
-        )}
+          
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2 border-2 border-orange-400 hover:border-orange-600"
+              >
+                🎨 Символы
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 bg-popover border-2 border-gray-300">
+              <div className="grid grid-cols-8 gap-2">
+                {commonSymbols.map((symbol) => (
+                  <Button
+                    key={symbol}
+                    size="sm"
+                    variant="outline"
+                    className="h-8 w-8 p-0 text-lg border border-gray-300 hover:border-gray-500"
+                    onClick={() => insertSymbol(symbol)}
+                  >
+                    {symbol}
+                  </Button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Color Tools */}
+        <div className="flex gap-2 border-r-2 border-gray-300 pr-3 mr-3">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2 border-2 border-red-400 hover:border-red-600"
+              >
+                🎭 Цвет текста
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 bg-popover border-2 border-gray-300">
+              <div className="grid grid-cols-6 gap-1">
+                {[
+                  '#000000', '#333333', '#666666', '#999999', '#cccccc', '#ffffff',
+                  '#ff0000', '#ff6600', '#ffcc00', '#00ff00', '#0066ff', '#6600ff',
+                  '#ff3366', '#ff9933', '#ffff00', '#33ff33', '#3366ff', '#9933ff'
+                ].map((color) => (
+                  <Button
+                    key={color}
+                    size="sm"
+                    className="w-6 h-6 p-0 border border-gray-400"
+                    style={{ backgroundColor: color }}
+                    onClick={() => changeFontColor(color)}
+                  />
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2 border-2 border-pink-400 hover:border-pink-600"
+              >
+                🖍️ Фон текста
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 bg-popover border-2 border-gray-300">
+              <div className="grid grid-cols-6 gap-1">
+                {[
+                  '#ffffff', '#ffeeee', '#eeffee', '#eeeeff', '#ffffee', '#ffeeFF',
+                  '#ffcccc', '#ccffcc', '#ccccff', '#ffffcc', '#ffccff', '#ccffff'
+                ].map((color) => (
+                  <Button
+                    key={color}
+                    size="sm"
+                    className="w-6 h-6 p-0 border border-gray-400"
+                    style={{ backgroundColor: color }}
+                    onClick={() => changeBackgroundColor(color)}
+                  />
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Settings and Save */}
+        <div className="flex gap-2 ml-auto">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowSettingsDialog(true)}
+            className="gap-2 border-2 border-gray-500 hover:border-gray-700"
+          >
+            <Settings size={16} />
+            Настройки
+          </Button>
+          
+          {onSave && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onSave}
+              className="gap-2 border-2 border-green-500 hover:border-green-700"
+            >
+              <Save size={16} />
+              Сохранить
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Markdown редактор */}
@@ -404,7 +491,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 
       {/* Диалоги */}
       <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>
-        <DialogContent>
+        <DialogContent className="bg-popover border-2 border-gray-400">
           <DialogHeader>
             <DialogTitle>Вставить ссылку</DialogTitle>
           </DialogHeader>
@@ -415,6 +502,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                 value={linkText}
                 onChange={(e) => setLinkText(e.target.value)}
                 placeholder="Текст для отображения"
+                className="border-2 border-gray-300"
               />
             </div>
             <div>
@@ -424,11 +512,12 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                 onChange={(e) => setLinkUrl(e.target.value)}
                 placeholder="https://example.com"
                 type="url"
+                className="border-2 border-gray-300"
               />
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleInsertLink}>Вставить</Button>
-              <Button variant="outline" onClick={() => setShowLinkDialog(false)}>
+              <Button onClick={handleInsertLink} className="border-2 border-blue-500">Вставить</Button>
+              <Button variant="outline" onClick={() => setShowLinkDialog(false)} className="border-2 border-gray-400">
                 Отмена
               </Button>
             </div>
@@ -437,7 +526,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       </Dialog>
 
       <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
-        <DialogContent>
+        <DialogContent className="bg-popover border-2 border-gray-400">
           <DialogHeader>
             <DialogTitle>Вставить изображение</DialogTitle>
           </DialogHeader>
@@ -448,6 +537,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                 value={imageAlt}
                 onChange={(e) => setImageAlt(e.target.value)}
                 placeholder="Описание изображения"
+                className="border-2 border-gray-300"
               />
             </div>
             <div>
@@ -457,11 +547,12 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                 onChange={(e) => setImageUrl(e.target.value)}
                 placeholder="https://example.com/image.jpg"
                 type="url"
+                className="border-2 border-gray-300"
               />
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleInsertImage}>Вставить</Button>
-              <Button variant="outline" onClick={() => setShowImageDialog(false)}>
+              <Button onClick={handleInsertImage} className="border-2 border-green-500">Вставить</Button>
+              <Button variant="outline" onClick={() => setShowImageDialog(false)} className="border-2 border-gray-400">
                 Отмена
               </Button>
             </div>
@@ -470,7 +561,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       </Dialog>
 
       <Dialog open={showTableDialog} onOpenChange={setShowTableDialog}>
-        <DialogContent>
+        <DialogContent className="bg-popover border-2 border-gray-400">
           <DialogHeader>
             <DialogTitle>Создать таблицу</DialogTitle>
           </DialogHeader>
@@ -483,6 +574,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                 onChange={(e) => setTableRows(parseInt(e.target.value) || 3)}
                 min="2"
                 max="10"
+                className="border-2 border-gray-300"
               />
             </div>
             <div>
@@ -493,12 +585,48 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                 onChange={(e) => setTableCols(parseInt(e.target.value) || 3)}
                 min="2"
                 max="10"
+                className="border-2 border-gray-300"
               />
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleInsertTable}>Создать</Button>
-              <Button variant="outline" onClick={() => setShowTableDialog(false)}>
+              <Button onClick={handleInsertTable} className="border-2 border-purple-500">Создать</Button>
+              <Button variant="outline" onClick={() => setShowTableDialog(false)} className="border-2 border-gray-400">
                 Отмена
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
+        <DialogContent className="bg-popover border-2 border-gray-400">
+          <DialogHeader>
+            <DialogTitle>Настройки редактора</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-medium mb-2">Горячие клавиши:</h4>
+              <div className="text-sm text-muted-foreground space-y-1">
+                <div>• Ctrl+B - Жирный текст</div>
+                <div>• Ctrl+I - Курсив</div>
+                <div>• Ctrl+K - Ссылка</div>
+                <div>• Ctrl+Alt+T - Таблица</div>
+                <div>• Ctrl+P - Предпросмотр</div>
+                <div>• F9 - Режим бок о бок</div>
+                <div>• F11 - Полноэкранный режим</div>
+              </div>
+            </div>
+            <div>
+              <h4 className="font-medium mb-2">Информация:</h4>
+              <div className="text-sm text-muted-foreground">
+                <div>Версия редактора: EasyMDE 2.20.0</div>
+                <div>Поддержка Markdown: Полная</div>
+                <div>Автосохранение: Включено</div>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={() => setShowSettingsDialog(false)} className="border-2 border-gray-400">
+                Закрыть
               </Button>
             </div>
           </div>
@@ -509,6 +637,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       <style>{`
         .markdown-editor-container .EasyMDEContainer {
           border-radius: 8px;
+          border: 2px solid hsl(var(--border));
         }
         
         .markdown-editor-container .EasyMDEContainer .CodeMirror {
@@ -516,21 +645,34 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           font-size: 14px;
           line-height: 1.6;
           border-radius: 0 0 8px 8px;
+          border: none;
         }
         
         .markdown-editor-container .editor-toolbar {
           border-radius: 8px 8px 0 0;
           background: hsl(var(--muted));
+          border: none;
+          border-bottom: 2px solid hsl(var(--border));
         }
         
         .markdown-editor-container .editor-toolbar button {
-          border: none !important;
+          border: 2px solid transparent !important;
           background: transparent !important;
           color: hsl(var(--foreground)) !important;
+          border-radius: 4px !important;
+          margin: 2px !important;
+          font-weight: bold !important;
         }
         
         .markdown-editor-container .editor-toolbar button:hover {
           background: hsl(var(--accent)) !important;
+          border-color: hsl(var(--border)) !important;
+        }
+        
+        .markdown-editor-container .editor-toolbar button.active {
+          background: hsl(var(--primary)) !important;
+          color: hsl(var(--primary-foreground)) !important;
+          border-color: hsl(var(--primary)) !important;
         }
         
         .markdown-editor-container .editor-toolbar.fullscreen {
@@ -539,6 +681,12 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         
         .markdown-editor-container .CodeMirror-fullscreen {
           z-index: 1000;
+        }
+        
+        .markdown-editor-container .editor-statusbar {
+          border-top: 2px solid hsl(var(--border));
+          background: hsl(var(--muted));
+          color: hsl(var(--muted-foreground));
         }
       `}</style>
     </div>

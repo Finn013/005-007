@@ -71,50 +71,118 @@
   }
 }
 
-/* Дополнительные стили для типов записей */
+/* Дополнительные стили для типов записей с увеличенной толщиной */
 @layer components {
   .note-card-note {
-    @apply border-blue-400 shadow-blue-400/20;
-    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 
-                0 2px 4px -1px rgba(59, 130, 246, 0.06),
-                0 0 0 1px rgba(59, 130, 246, 0.3),
-                inset 0 1px 0 rgba(59, 130, 246, 0.1);
+    @apply border-blue-500;
+    border-width: 3px;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2), 
+                0 2px 4px -1px rgba(59, 130, 246, 0.1),
+                0 0 0 2px rgba(59, 130, 246, 0.4),
+                inset 0 2px 4px rgba(59, 130, 246, 0.1);
   }
   
   .note-card-note:hover {
-    box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.2), 
-                0 4px 6px -2px rgba(59, 130, 246, 0.1),
-                0 0 0 1px rgba(59, 130, 246, 0.4),
-                inset 0 1px 0 rgba(59, 130, 246, 0.15);
+    box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3), 
+                0 4px 6px -2px rgba(59, 130, 246, 0.15),
+                0 0 0 3px rgba(59, 130, 246, 0.5),
+                inset 0 2px 4px rgba(59, 130, 246, 0.15);
   }
   
   .note-card-list {
-    @apply border-green-400 shadow-green-400/20;
-    box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.1), 
-                0 2px 4px -1px rgba(34, 197, 94, 0.06),
-                0 0 0 1px rgba(34, 197, 94, 0.3),
-                inset 0 1px 0 rgba(34, 197, 94, 0.1);
+    @apply border-green-500;
+    border-width: 3px;
+    box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.2), 
+                0 2px 4px -1px rgba(34, 197, 94, 0.1),
+                0 0 0 2px rgba(34, 197, 94, 0.4),
+                inset 0 2px 4px rgba(34, 197, 94, 0.1);
   }
   
   .note-card-list:hover {
-    box-shadow: 0 10px 15px -3px rgba(34, 197, 94, 0.2), 
-                0 4px 6px -2px rgba(34, 197, 94, 0.1),
-                0 0 0 1px rgba(34, 197, 94, 0.4),
-                inset 0 1px 0 rgba(34, 197, 94, 0.15);
+    box-shadow: 0 10px 15px -3px rgba(34, 197, 94, 0.3), 
+                0 4px 6px -2px rgba(34, 197, 94, 0.15),
+                0 0 0 3px rgba(34, 197, 94, 0.5),
+                inset 0 2px 4px rgba(34, 197, 94, 0.15);
   }
   
   .note-card-editor {
-    @apply border-purple-400 shadow-purple-400/20;
-    box-shadow: 0 4px 6px -1px rgba(147, 51, 234, 0.1), 
-                0 2px 4px -1px rgba(147, 51, 234, 0.06),
-                0 0 0 1px rgba(147, 51, 234, 0.3),
-                inset 0 1px 0 rgba(147, 51, 234, 0.1);
+    @apply border-purple-500;
+    border-width: 3px;
+    box-shadow: 0 4px 6px -1px rgba(147, 51, 234, 0.2), 
+                0 2px 4px -1px rgba(147, 51, 234, 0.1),
+                0 0 0 2px rgba(147, 51, 234, 0.4),
+                inset 0 2px 4px rgba(147, 51, 234, 0.1);
   }
   
   .note-card-editor:hover {
-    box-shadow: 0 10px 15px -3px rgba(147, 51, 234, 0.2), 
-                0 4px 6px -2px rgba(147, 51, 234, 0.1),
-                0 0 0 1px rgba(147, 51, 234, 0.4),
-                inset 0 1px 0 rgba(147, 51, 234, 0.15);
+    box-shadow: 0 10px 15px -3px rgba(147, 51, 234, 0.3), 
+                0 4px 6px -2px rgba(147, 51, 234, 0.15),
+                0 0 0 3px rgba(147, 51, 234, 0.5),
+                inset 0 2px 4px rgba(147, 51, 234, 0.15);
+  }
+
+  /* Стили для карточек режимов на главном экране */
+  .mode-card-tasks {
+    @apply border-green-500;
+    border-width: 3px;
+    box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.2), 
+                0 2px 4px -1px rgba(34, 197, 94, 0.1),
+                0 0 0 2px rgba(34, 197, 94, 0.4),
+                inset 0 2px 4px rgba(34, 197, 94, 0.1);
+  }
+  
+  .mode-card-tasks:hover {
+    box-shadow: 0 10px 15px -3px rgba(34, 197, 94, 0.3), 
+                0 4px 6px -2px rgba(34, 197, 94, 0.15),
+                0 0 0 3px rgba(34, 197, 94, 0.5),
+                inset 0 2px 4px rgba(34, 197, 94, 0.15);
+  }
+
+  .mode-card-notes {
+    @apply border-blue-500;
+    border-width: 3px;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2), 
+                0 2px 4px -1px rgba(59, 130, 246, 0.1),
+                0 0 0 2px rgba(59, 130, 246, 0.4),
+                inset 0 2px 4px rgba(59, 130, 246, 0.1);
+  }
+  
+  .mode-card-notes:hover {
+    box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3), 
+                0 4px 6px -2px rgba(59, 130, 246, 0.15),
+                0 0 0 3px rgba(59, 130, 246, 0.5),
+                inset 0 2px 4px rgba(59, 130, 246, 0.15);
+  }
+
+  .mode-card-editor {
+    @apply border-purple-500;
+    border-width: 3px;
+    box-shadow: 0 4px 6px -1px rgba(147, 51, 234, 0.2), 
+                0 2px 4px -1px rgba(147, 51, 234, 0.1),
+                0 0 0 2px rgba(147, 51, 234, 0.4),
+                inset 0 2px 4px rgba(147, 51, 234, 0.1);
+  }
+  
+  .mode-card-editor:hover {
+    box-shadow: 0 10px 15px -3px rgba(147, 51, 234, 0.3), 
+                0 4px 6px -2px rgba(147, 51, 234, 0.15),
+                0 0 0 3px rgba(147, 51, 234, 0.5),
+                inset 0 2px 4px rgba(147, 51, 234, 0.15);
+  }
+
+  .mode-card-all {
+    @apply border-orange-500;
+    border-width: 3px;
+    box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 
+                0 2px 4px -1px rgba(249, 115, 22, 0.1),
+                0 0 0 2px rgba(249, 115, 22, 0.4),
+                inset 0 2px 4px rgba(249, 115, 22, 0.1);
+  }
+  
+  .mode-card-all:hover {
+    box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 
+                0 4px 6px -2px rgba(249, 115, 22, 0.15),
+                0 0 0 3px rgba(249, 115, 22, 0.5),
+                inset 0 2px 4px rgba(249, 115, 22, 0.15);
   }
 }
