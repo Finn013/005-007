@@ -75,7 +75,8 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         autoSaveTimeoutRef.current = setTimeout(() => {
           if (editorInstanceRef.current) {
             const markdownContent = editorInstanceRef.current.value();
-            const htmlContent = editorInstanceRef.current.options.previewRender?.(markdownContent) || markdownContent;
+            // Простое преобразование markdown в HTML для превью
+            const htmlContent = convertMarkdownToHTML(markdownContent);
             const plainText = markdownContent.replace(/[#*\-_`~\[\]()]/g, '');
             
             onChange(htmlContent, plainText, markdownContent);
@@ -91,6 +92,19 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       }
     };
   }, []);
+
+  // Простая функция для конвертации markdown в HTML
+  const convertMarkdownToHTML = (markdown: string): string => {
+    return markdown
+      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+      .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+      .replace(/\*(.*)\*/gim, '<em>$1</em>')
+      .replace(/!\[([^\]]*)\]\(([^\)]*)\)/gim, '<img alt="$1" src="$2" />')
+      .replace(/\[([^\]]*)\]\(([^\)]*)\)/gim, '<a href="$2">$1</a>')
+      .replace(/\n/gim, '<br>');
+  };
 
   useEffect(() => {
     if (editorInstanceRef.current && content !== editorInstanceRef.current.value()) {
@@ -202,7 +216,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       </div>
 
       {/* Кастомные стили для EasyMDE */}
-      <style jsx>{`
+      <style>{`
         .markdown-editor-container .EasyMDEContainer {
           border-radius: 8px;
         }

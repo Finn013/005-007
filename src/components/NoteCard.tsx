@@ -195,7 +195,7 @@ const NoteCard: React.FC<NoteCardProps> = ({
     );
     
     const sortedItems = updatedItems.sort((a, b) => {
-      if (a.completed === b.completed) return a.order - b.order;
+      if (a.completed === b.completed) return (a.order || 0) - (b.order || 0);
       return a.completed ? 1 : -1;
     });
     

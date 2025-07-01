@@ -20,6 +20,7 @@ export interface ListItem {
   id: string;
   text: string;
   completed: boolean;
+  order?: number;
 }
 
 export interface AppSettings {
