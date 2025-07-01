@@ -3,7 +3,19 @@ import React, { useEffect, useRef, useState } from 'react';
 import EasyMDE from 'easymde';
 import 'easymde/dist/easymde.min.css';
 import { Button } from '@/components/ui/button';
-import { FileText, FileCode, Upload, Save } from 'lucide-react';
+import { FileText, FileCode, Upload, Save, Link, Image, Table, Type } from 'lucide-react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from '@/components/ui/input';
 
 interface MarkdownEditorProps {
   content: string;
@@ -26,6 +38,15 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   const editorInstanceRef = useRef<EasyMDE | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<Date>(new Date());
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
+  const [showLinkDialog, setShowLinkDialog] = useState(false);
+  const [showImageDialog, setShowImageDialog] = useState(false);
+  const [showTableDialog, setShowTableDialog] = useState(false);
+  const [linkText, setLinkText] = useState('');
+  const [linkUrl, setLinkUrl] = useState('');
+  const [imageAlt, setImageAlt] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [tableRows, setTableRows] = useState(3);
+  const [tableCols, setTableCols] = useState(3);
 
   useEffect(() => {
     if (textareaRef.current && !editorInstanceRef.current) {
@@ -75,7 +96,6 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         autoSaveTimeoutRef.current = setTimeout(() => {
           if (editorInstanceRef.current) {
             const markdownContent = editorInstanceRef.current.value();
-            // Простое преобразование markdown в HTML для превью
             const htmlContent = convertMarkdownToHTML(markdownContent);
             const plainText = markdownContent.replace(/[#*\-_`~\[\]()]/g, '');
             
@@ -142,53 +162,220 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     }
   };
 
+  const insertText = (text: string) => {
+    if (editorInstanceRef.current) {
+      const cm = editorInstanceRef.current.codemirror;
+      const cursor = cm.getCursor();
+      cm.replaceRange(text, cursor);
+      cm.focus();
+    }
+  };
+
+  const handleInsertLink = () => {
+    if (linkText && linkUrl) {
+      insertText(`[${linkText}](${linkUrl})`);
+      setLinkText('');
+      setLinkUrl('');
+      setShowLinkDialog(false);
+    }
+  };
+
+  const handleInsertImage = () => {
+    if (imageAlt && imageUrl) {
+      insertText(`![${imageAlt}](${imageUrl})`);
+      setImageAlt('');
+      setImageUrl('');
+      setShowImageDialog(false);
+    }
+  };
+
+  const handleInsertTable = () => {
+    let tableMarkdown = '\n';
+    
+    // Header
+    tableMarkdown += '|';
+    for (let i = 1; i <= tableCols; i++) {
+      tableMarkdown += ` Заголовок ${i} |`;
+    }
+    tableMarkdown += '\n';
+    
+    // Separator
+    tableMarkdown += '|';
+    for (let i = 0; i < tableCols; i++) {
+      tableMarkdown += ' --- |';
+    }
+    tableMarkdown += '\n';
+    
+    // Rows
+    for (let i = 1; i < tableRows; i++) {
+      tableMarkdown += '|';
+      for (let j = 1; j <= tableCols; j++) {
+        tableMarkdown += ` Ячейка ${i}-${j} |`;
+      }
+      tableMarkdown += '\n';
+    }
+    
+    insertText(tableMarkdown);
+    setShowTableDialog(false);
+  };
+
+  const changeFontColor = (color: string) => {
+    const selectedText = window.getSelection()?.toString() || 'цветной текст';
+    insertText(`<span style="color: ${color}">${selectedText}</span>`);
+  };
+
+  const changeBackgroundColor = (color: string) => {
+    const selectedText = window.getSelection()?.toString() || 'выделенный текст';
+    insertText(`<span style="background-color: ${color}">${selectedText}</span>`);
+  };
+
   return (
     <div className="space-y-4">
-      {/* Панель инструментов для экспорта/импорта */}
+      {/* Расширенная панель инструментов */}
       <div className="flex flex-wrap gap-2 p-3 border rounded-lg bg-muted/50">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onExportHTML}
-          className="gap-1"
-        >
-          <FileCode size={14} />
-          HTML
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onExportTXT}
-          className="gap-1"
-        >
-          <FileText size={14} />
-          TXT
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleExportMarkdown}
-          className="gap-1"
-        >
-          📝 MD
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          asChild
-          className="gap-1"
-        >
-          <label className="cursor-pointer">
-            <Upload size={14} />
-            Импорт
-            <input
-              type="file"
-              accept=".md,.txt,.html"
-              onChange={handleFileImport}
-              className="hidden"
-            />
-          </label>
-        </Button>
+        {/* Export/Import buttons */}
+        <div className="flex gap-1 border-r pr-2 mr-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onExportHTML}
+            className="gap-1"
+          >
+            <FileCode size={14} />
+            HTML
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onExportTXT}
+            className="gap-1"
+          >
+            <FileText size={14} />
+            TXT
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportMarkdown}
+            className="gap-1"
+          >
+            📝 MD
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            asChild
+            className="gap-1"
+          >
+            <label className="cursor-pointer">
+              <Upload size={14} />
+              Импорт
+              <input
+                type="file"
+                accept=".md,.txt,.html"
+                onChange={handleFileImport}
+                className="hidden"
+              />
+            </label>
+          </Button>
+        </div>
+
+        {/* Insert options */}
+        <div className="flex gap-1 border-r pr-2 mr-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowLinkDialog(true)}
+            className="gap-1"
+          >
+            <Link size={14} />
+            Ссылка
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowImageDialog(true)}
+            className="gap-1"
+          >
+            <Image size={14} />
+            Изображение
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowTableDialog(true)}
+            className="gap-1"
+          >
+            <Table size={14} />
+            Таблица
+          </Button>
+        </div>
+
+        {/* Font color */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-1">
+              🎨 Цвет
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-48">
+            <div className="grid grid-cols-6 gap-1">
+              {[
+                '#000000', '#333333', '#666666', '#999999', '#cccccc', '#ffffff',
+                '#ff0000', '#ff6600', '#ffcc00', '#00ff00', '#0066ff', '#6600ff',
+                '#ff3366', '#ff9933', '#ffff00', '#33ff33', '#3366ff', '#9933ff'
+              ].map((color) => (
+                <Button
+                  key={color}
+                  size="sm"
+                  className="w-6 h-6 p-0"
+                  style={{ backgroundColor: color }}
+                  onClick={() => changeFontColor(color)}
+                />
+              ))}
+            </div>
+            <div className="mt-2">
+              <input
+                type="color"
+                onChange={(e) => changeFontColor(e.target.value)}
+                className="w-full h-8 rounded border"
+              />
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Background color */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-1">
+              🖍️ Фон
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-48">
+            <div className="grid grid-cols-6 gap-1">
+              {[
+                '#ffffff', '#ffeeee', '#eeffee', '#eeeeff', '#ffffee', '#ffeeFF',
+                '#ffcccc', '#ccffcc', '#ccccff', '#ffffcc', '#ffccff', '#ccffff'
+              ].map((color) => (
+                <Button
+                  key={color}
+                  size="sm"
+                  className="w-6 h-6 p-0"
+                  style={{ backgroundColor: color }}
+                  onClick={() => changeBackgroundColor(color)}
+                />
+              ))}
+            </div>
+            <div className="mt-2">
+              <input
+                type="color"
+                onChange={(e) => changeBackgroundColor(e.target.value)}
+                className="w-full h-8 rounded border"
+              />
+            </div>
+          </PopoverContent>
+        </Popover>
+
         {onSave && (
           <Button
             variant="outline"
@@ -214,6 +401,109 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       <div className="text-xs text-muted-foreground">
         ✓ Автосохранение • Последнее сохранение: {lastSavedAt.toLocaleTimeString()}
       </div>
+
+      {/* Диалоги */}
+      <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Вставить ссылку</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Текст ссылки</label>
+              <Input
+                value={linkText}
+                onChange={(e) => setLinkText(e.target.value)}
+                placeholder="Текст для отображения"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">URL</label>
+              <Input
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                placeholder="https://example.com"
+                type="url"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleInsertLink}>Вставить</Button>
+              <Button variant="outline" onClick={() => setShowLinkDialog(false)}>
+                Отмена
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Вставить изображение</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Альтернативный текст</label>
+              <Input
+                value={imageAlt}
+                onChange={(e) => setImageAlt(e.target.value)}
+                placeholder="Описание изображения"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">URL изображения</label>
+              <Input
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                placeholder="https://example.com/image.jpg"
+                type="url"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleInsertImage}>Вставить</Button>
+              <Button variant="outline" onClick={() => setShowImageDialog(false)}>
+                Отмена
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showTableDialog} onOpenChange={setShowTableDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Создать таблицу</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Количество строк</label>
+              <Input
+                type="number"
+                value={tableRows}
+                onChange={(e) => setTableRows(parseInt(e.target.value) || 3)}
+                min="2"
+                max="10"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Количество столбцов</label>
+              <Input
+                type="number"
+                value={tableCols}
+                onChange={(e) => setTableCols(parseInt(e.target.value) || 3)}
+                min="2"
+                max="10"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleInsertTable}>Создать</Button>
+              <Button variant="outline" onClick={() => setShowTableDialog(false)}>
+                Отмена
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Кастомные стили для EasyMDE */}
       <style>{`

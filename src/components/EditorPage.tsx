@@ -2,18 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Save, Tag, Plus, X, FileText, Code } from 'lucide-react';
-import RichTextEditor from './RichTextEditor';
+import { ArrowLeft, Save, Tag, Plus, X, Code } from 'lucide-react';
 import MarkdownEditor from './MarkdownEditor';
 import TagSelector from './TagSelector';
 import { Note } from '../types/note';
 import { generateUUID } from '../utils/idGenerator';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
 
 interface EditorPageProps {
   onBack: () => void;
@@ -28,7 +21,6 @@ const EditorPage: React.FC<EditorPageProps> = ({ onBack, onSave, existingNote })
   const [markdownContent, setMarkdownContent] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
-  const [editorType, setEditorType] = useState<'rich' | 'markdown'>('rich');
 
   useEffect(() => {
     if (existingNote) {
@@ -37,7 +29,6 @@ const EditorPage: React.FC<EditorPageProps> = ({ onBack, onSave, existingNote })
       setHtmlContent(existingNote.htmlContent || '');
       setMarkdownContent(existingNote.markdownContent || existingNote.content);
       setTags(existingNote.tags || []);
-      setEditorType(existingNote.editorType || 'rich');
     }
   }, [existingNote]);
 
@@ -48,7 +39,7 @@ const EditorPage: React.FC<EditorPageProps> = ({ onBack, onSave, existingNote })
       content,
       htmlContent,
       markdownContent,
-      editorType,
+      editorType: 'markdown',
       createdAt: existingNote?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       color: existingNote?.color || '#ffffff',
@@ -78,7 +69,7 @@ const EditorPage: React.FC<EditorPageProps> = ({ onBack, onSave, existingNote })
   };
 
   const handleExportHTML = () => {
-    const exportContent = editorType === 'markdown' ? htmlContent : htmlContent;
+    const exportContent = htmlContent;
     const blob = new Blob([exportContent], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -89,7 +80,7 @@ const EditorPage: React.FC<EditorPageProps> = ({ onBack, onSave, existingNote })
   };
 
   const handleExportTXT = () => {
-    const exportContent = editorType === 'markdown' ? markdownContent : content;
+    const exportContent = markdownContent;
     const blob = new Blob([exportContent], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -103,31 +94,20 @@ const EditorPage: React.FC<EditorPageProps> = ({ onBack, onSave, existingNote })
     const reader = new FileReader();
     reader.onload = (e) => {
       const fileContent = e.target?.result as string;
-      if (file.name.endsWith('.md')) {
+      if (file.name.endsWith('.md') || file.name.endsWith('.txt')) {
         setMarkdownContent(fileContent);
         setContent(fileContent);
-        setEditorType('markdown');
       } else if (file.type === 'text/html') {
         setHtmlContent(fileContent);
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = fileContent;
         setContent(tempDiv.textContent || tempDiv.innerText || '');
-        setEditorType('rich');
       } else {
         setContent(fileContent);
-        if (editorType === 'markdown') {
-          setMarkdownContent(fileContent);
-        } else {
-          setHtmlContent(fileContent);
-        }
+        setMarkdownContent(fileContent);
       }
     };
     reader.readAsText(file);
-  };
-
-  const handleRichTextChange = (newHtmlContent: string, newPlainText: string) => {
-    setHtmlContent(newHtmlContent);
-    setContent(newPlainText);
   };
 
   const handleMarkdownChange = (newHtmlContent: string, newPlainText: string, newMarkdownContent: string) => {
@@ -197,39 +177,19 @@ const EditorPage: React.FC<EditorPageProps> = ({ onBack, onSave, existingNote })
       </div>
 
       <div className="container mx-auto px-4 py-6">
-        <Tabs value={editorType} onValueChange={(value) => setEditorType(value as 'rich' | 'markdown')}>
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="rich" className="gap-2">
-              <FileText size={16} />
-              Богатый редактор
-            </TabsTrigger>
-            <TabsTrigger value="markdown" className="gap-2">
-              <Code size={16} />
-              Markdown редактор
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="rich">
-            <RichTextEditor
-              content={htmlContent}
-              onChange={handleRichTextChange}
-              onExportHTML={handleExportHTML}
-              onExportTXT={handleExportTXT}
-              onImport={handleImport}
-            />
-          </TabsContent>
-          
-          <TabsContent value="markdown">
-            <MarkdownEditor
-              content={markdownContent}
-              onChange={handleMarkdownChange}
-              onExportHTML={handleExportHTML}
-              onExportTXT={handleExportTXT}
-              onImport={handleImport}
-              onSave={handleSave}
-            />
-          </TabsContent>
-        </Tabs>
+        <div className="mb-6 flex items-center gap-2 text-muted-foreground">
+          <Code size={16} />
+          <span className="text-sm font-medium">Markdown редактор</span>
+        </div>
+        
+        <MarkdownEditor
+          content={markdownContent}
+          onChange={handleMarkdownChange}
+          onExportHTML={handleExportHTML}
+          onExportTXT={handleExportTXT}
+          onImport={handleImport}
+          onSave={handleSave}
+        />
       </div>
     </div>
   );

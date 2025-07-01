@@ -268,6 +268,21 @@ const NoteCard: React.FC<NoteCardProps> = ({
     }
   };
 
+  const getTypeStyles = () => {
+    const baseStyles = "rounded-lg border-2 shadow-sm transition-all duration-200 hover:shadow-md";
+    
+    switch (note.type) {
+      case 'note':
+        return `${baseStyles} border-blue-400 shadow-blue-400/30 hover:shadow-blue-400/50 shadow-lg`;
+      case 'list':
+        return `${baseStyles} border-green-400 shadow-green-400/30 hover:shadow-green-400/50 shadow-lg`;
+      case 'editor':
+        return `${baseStyles} border-purple-400 shadow-purple-400/30 hover:shadow-purple-400/50 shadow-lg`;
+      default:
+        return `${baseStyles} border-gray-400 shadow-gray-400/30 hover:shadow-gray-400/50 shadow-lg`;
+    }
+  };
+
   // Drag and Drop handlers
   const handleDragStart = (e: React.DragEvent | React.TouchEvent) => {
     if ('dataTransfer' in e) {
@@ -330,7 +345,7 @@ const NoteCard: React.FC<NoteCardProps> = ({
     <>
       <div 
         data-note-id={note.id}
-        className={`rounded-lg border shadow-sm transition-all duration-200 hover:shadow-md ${
+        className={`${getTypeStyles()} ${
           note.isSelected ? 'ring-2 ring-primary' : ''
         } ${isDragging ? 'opacity-50 scale-95' : ''}`}
         style={{ backgroundColor: note.color }}
