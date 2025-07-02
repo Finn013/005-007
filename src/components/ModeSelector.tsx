@@ -76,7 +76,7 @@ const ModeSelector: React.FC<ModeSelectorProps> = ({ onSelectMode }) => {
               onClick={() => onSelectMode('editor')} 
               className="w-full bg-purple-500 hover:bg-purple-600 text-white border-2 border-purple-600"
             >
-              Открыть редактор
+              К документам
             </Button>
           </CardContent>
         </Card>

@@ -37,16 +37,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   const editorInstanceRef = useRef<EasyMDE | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<Date>(new Date());
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
-  const [showLinkDialog, setShowLinkDialog] = useState(false);
-  const [showImageDialog, setShowImageDialog] = useState(false);
-  const [showTableDialog, setShowTableDialog] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
-  const [linkText, setLinkText] = useState('');
-  const [linkUrl, setLinkUrl] = useState('');
-  const [imageAlt, setImageAlt] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [tableRows, setTableRows] = useState(3);
-  const [tableCols, setTableCols] = useState(3);
   const [customSymbol, setCustomSymbol] = useState('');
   const [commonSymbols] = useState([
     '★', '☆', '✓', '✗', '✕', '⚠️', '🔥', '💡', '📝', '📋',
@@ -107,137 +98,24 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
     if (textareaRef.current && !editorInstanceRef.current) {
       editorInstanceRef.current = new EasyMDE({
         element: textareaRef.current,
-        autoDownloadFontAwesome: false,
+        autoDownloadFontAwesome: true,
         spellChecker: false,
         status: ['autosave', 'lines', 'words', 'cursor'],
         toolbar: [
           // Отмена/повтор
-          {
-            name: 'undo',
-            action: EasyMDE.undo,
-            className: 'fa fa-undo no-disable',
-            title: 'Отменить (Ctrl+Z)',
-          },
-          {
-            name: 'redo',
-            action: EasyMDE.redo,
-            className: 'fa fa-repeat no-disable',
-            title: 'Повторить (Ctrl+Y)',
-          },
-          '|',
+          'undo', 'redo', '|',
           // Форматирование
-          {
-            name: 'bold',
-            action: EasyMDE.toggleBold,
-            className: 'fa fa-bold',
-            title: 'Жирный (Ctrl+B)',
-          },
-          {
-            name: 'italic',
-            action: EasyMDE.toggleItalic,
-            className: 'fa fa-italic',
-            title: 'Курсив (Ctrl+I)',
-          },
-          {
-            name: 'strikethrough',
-            action: EasyMDE.toggleStrikethrough,
-            className: 'fa fa-strikethrough',
-            title: 'Зачеркнутый',
-          },
-          '|',
+          'bold', 'italic', 'strikethrough', '|',
           // Заголовки
-          {
-            name: 'heading-1',
-            action: EasyMDE.toggleHeading1,
-            className: 'fa fa-header fa-header-x fa-header-1',
-            title: 'Заголовок 1',
-          },
-          {
-            name: 'heading-2',
-            action: EasyMDE.toggleHeading2,
-            className: 'fa fa-header fa-header-x fa-header-2',
-            title: 'Заголовок 2',
-          },
-          {
-            name: 'heading-3',
-            action: EasyMDE.toggleHeading3,
-            className: 'fa fa-header fa-header-x fa-header-3',
-            title: 'Заголовок 3',
-          },
-          '|',
+          'heading-1', 'heading-2', 'heading-3', '|',
           // Списки и цитаты
-          {
-            name: 'quote',
-            action: EasyMDE.toggleBlockquote,
-            className: 'fa fa-quote-left',
-            title: 'Цитата',
-          },
-          {
-            name: 'unordered-list',
-            action: EasyMDE.toggleUnorderedList,
-            className: 'fa fa-list-ul',
-            title: 'Маркированный список',
-          },
-          {
-            name: 'ordered-list',
-            action: EasyMDE.toggleOrderedList,
-            className: 'fa fa-list-ol',
-            title: 'Нумерованный список',
-          },
-          '|',
+          'quote', 'unordered-list', 'ordered-list', '|',
           // Код и таблицы
-          {
-            name: 'code',
-            action: EasyMDE.toggleCodeBlock,
-            className: 'fa fa-code',
-            title: 'Код',
-          },
-          {
-            name: 'table',
-            action: EasyMDE.drawTable,
-            className: 'fa fa-table',
-            title: 'Таблица',
-          },
-          {
-            name: 'horizontal-rule',
-            action: EasyMDE.drawHorizontalRule,
-            className: 'fa fa-minus',
-            title: 'Горизонтальная линия',
-          },
-          '|',
+          'code', 'table', 'horizontal-rule', '|',
           // Ссылки и изображения
-          {
-            name: 'link',
-            action: EasyMDE.drawLink,
-            className: 'fa fa-link',
-            title: 'Ссылка (Ctrl+K)',
-          },
-          {
-            name: 'image',
-            action: EasyMDE.drawImage,
-            className: 'fa fa-picture-o',
-            title: 'Изображение',
-          },
-          '|',
+          'link', 'image', '|',
           // Просмотр
-          {
-            name: 'preview',
-            action: EasyMDE.togglePreview,
-            className: 'fa fa-eye no-disable',
-            title: 'Предпросмотр (Ctrl+P)',
-          },
-          {
-            name: 'side-by-side',
-            action: EasyMDE.toggleSideBySide,
-            className: 'fa fa-columns no-disable no-mobile',
-            title: 'Режим бок о бок (F9)',
-          },
-          {
-            name: 'fullscreen',
-            action: EasyMDE.toggleFullScreen,
-            className: 'fa fa-arrows-alt no-disable no-mobile',
-            title: 'Полноэкранный режим (F11)',
-          }
+          'preview', 'side-by-side', 'fullscreen'
         ],
         placeholder: 'Начните писать в формате Markdown...',
         initialValue: content,
@@ -246,7 +124,6 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           codeSyntaxHighlighting: true,
         },
         previewRender: (plainText: string) => {
-          // Используем наш продвинутый конвертер
           return convertMarkdownToHTML(plainText);
         },
         shortcuts: {
@@ -256,7 +133,6 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           toggleFullScreen: 'F11'
         },
         theme: 'default',
-        // Подключаем внешние стили
         styleSelectedText: true,
       });
 
@@ -340,61 +216,6 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       insertText(customSymbol);
       setCustomSymbol('');
     }
-  };
-
-  const handleInsertLink = () => {
-    if (linkText && linkUrl) {
-      insertText(`[${linkText}](${linkUrl})`);
-      setLinkText('');
-      setLinkUrl('');
-      setShowLinkDialog(false);
-    }
-  };
-
-  const handleInsertImage = () => {
-    if (imageAlt && imageUrl) {
-      insertText(`![${imageAlt}](${imageUrl})`);
-      setImageAlt('');
-      setImageUrl('');
-      setShowImageDialog(false);
-    }
-  };
-
-  const handleInsertTable = () => {
-    let tableMarkdown = '\n';
-    
-    tableMarkdown += '|';
-    for (let i = 1; i <= tableCols; i++) {
-      tableMarkdown += ` Заголовок ${i} |`;
-    }
-    tableMarkdown += '\n';
-    
-    tableMarkdown += '|';
-    for (let i = 0; i < tableCols; i++) {
-      tableMarkdown += ' --- |';
-    }
-    tableMarkdown += '\n';
-    
-    for (let i = 1; i < tableRows; i++) {
-      tableMarkdown += '|';
-      for (let j = 1; j <= tableCols; j++) {
-        tableMarkdown += ` Ячейка ${i}-${j} |`;
-      }
-      tableMarkdown += '\n';
-    }
-    
-    insertText(tableMarkdown);
-    setShowTableDialog(false);
-  };
-
-  const changeFontColor = (color: string) => {
-    const selectedText = window.getSelection()?.toString() || 'цветной текст';
-    insertText(`<span style="color: ${color}">${selectedText}</span>`);
-  };
-
-  const changeBackgroundColor = (color: string) => {
-    const selectedText = window.getSelection()?.toString() || 'выделенный текст';
-    insertText(`<span style="background-color: ${color}">${selectedText}</span>`);
   };
 
   return (
@@ -579,7 +400,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Кастомные стили для EasyMDE */}
+      {/* Улучшенные стили для EasyMDE */}
       <style>{`
         .markdown-editor-container .EasyMDEContainer {
           border-radius: 8px;
@@ -600,29 +421,45 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           background: hsl(var(--muted));
           border: none;
           border-bottom: 3px solid hsl(var(--border));
+          padding: 8px !important;
         }
         
         .markdown-editor-container .editor-toolbar button {
           border: 2px solid transparent !important;
-          background: transparent !important;
-          color: hsl(var(--foreground)) !important;
+          background: rgba(147, 51, 234, 0.1) !important;
+          color: rgb(147, 51, 234) !important;
           border-radius: 6px !important;
           margin: 2px !important;
           font-weight: bold !important;
           transition: all 0.2s ease !important;
+          width: 28px !important;
+          height: 28px !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
         }
         
         .markdown-editor-container .editor-toolbar button:hover {
-          background: hsl(var(--accent)) !important;
-          border-color: hsl(var(--border)) !important;
+          background: rgba(147, 51, 234, 0.2) !important;
+          border-color: rgb(147, 51, 234) !important;
           transform: translateY(-1px);
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          box-shadow: 0 2px 4px rgba(147, 51, 234, 0.3);
         }
         
         .markdown-editor-container .editor-toolbar button.active {
-          background: hsl(var(--primary)) !important;
-          color: hsl(var(--primary-foreground)) !important;
-          border-color: hsl(var(--primary)) !important;
+          background: rgb(147, 51, 234) !important;
+          color: white !important;
+          border-color: rgb(147, 51, 234) !important;
+        }
+        
+        .markdown-editor-container .editor-toolbar button:before {
+          font-size: 16px !important;
+          line-height: 1 !important;
+        }
+        
+        .markdown-editor-container .editor-toolbar i.separator {
+          border-left: 2px solid rgb(147, 51, 234);
+          margin: 0 6px;
         }
         
         .markdown-editor-container .editor-toolbar.fullscreen {
@@ -643,6 +480,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         .markdown-editor-container .editor-preview-side,
         .markdown-editor-container .editor-preview {
           font-family: 'Inter', sans-serif;
+          padding: 16px;
         }
         
         /* Улучшенный предпросмотр */
@@ -666,6 +504,12 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           padding: 0.2em 0.4em;
           border-radius: 4px;
           font-size: 0.85em;
+        }
+        
+        /* FontAwesome иконки */
+        .markdown-editor-container .fa {
+          font-family: FontAwesome !important;
+          font-size: 14px !important;
         }
       `}</style>
     </div>

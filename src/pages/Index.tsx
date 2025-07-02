@@ -284,12 +284,8 @@ const Index = () => {
   };
 
   const handleModeSelect = (mode: 'notes' | 'tasks' | 'editor' | 'all' | 'settings' | 'trash') => {
-    if (mode === 'editor') {
-      createEditor();
-    } else {
-      setViewMode(mode);
-      setActiveTagFilter(null); // Reset tag filter when changing modes
-    }
+    setViewMode(mode);
+    setActiveTagFilter(null); // Reset tag filter when changing modes
   };
 
   const handleEditNote = (note: Note) => {
@@ -313,6 +309,9 @@ const Index = () => {
         break;
       case 'tasks':
         filtered = filtered.filter(note => note.type === 'list');
+        break;
+      case 'editor':
+        filtered = filtered.filter(note => note.type === 'editor');
         break;
       case 'all':
         // Show all
@@ -379,6 +378,7 @@ const Index = () => {
 
   const filteredNotes = getFilteredNotes();
   const isTaskView = viewMode === 'tasks';
+  const isEditorView = viewMode === 'editor';
 
   return (
     <div className="min-h-screen bg-background">
@@ -403,7 +403,7 @@ const Index = () => {
         {selectedCount > 0 && (
           <div className="mb-4 p-3 bg-primary/10 rounded-lg">
             <p className="text-sm text-primary font-medium">
-              Выбрано {isTaskView ? 'списков' : 'заметок'}: {selectedCount}
+              Выбрано {isTaskView ? 'списков' : isEditorView ? 'документов' : 'заметок'}: {selectedCount}
             </p>
           </div>
         )}
@@ -420,16 +420,20 @@ const Index = () => {
           <div className="text-center py-12">
             <div className="text-6xl mb-4">
               {activeTagFilter ? '🏷️' : 
-               isTaskView ? '📋' : viewMode === 'notes' ? '📝' : '📁'}
+               isTaskView ? '📋' : 
+               isEditorView ? '📄' :
+               viewMode === 'notes' ? '📝' : '📁'}
             </div>
             <h2 className="text-xl font-semibold text-foreground mb-2">
               {activeTagFilter ? `Нет документов с тегом "${activeTagFilter}"` :
                isTaskView ? 'Пока нет списков задач' : 
+               isEditorView ? 'Пока нет документов' :
                viewMode === 'notes' ? 'Пока нет заметок' : 'Пока нет документов'}
             </h2>
             <p className="text-muted-foreground mb-6">
               {activeTagFilter ? 'Попробуйте выбрать другой тег или создать новый документ' :
                isTaskView ? 'Создайте свой первый список задач' :
+               isEditorView ? 'Создайте свой первый документ' :
                viewMode === 'notes' ? 'Создайте свою первую заметку' : 'Создайте свой первый документ'}
             </p>
           </div>

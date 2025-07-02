@@ -59,7 +59,7 @@ const Header: React.FC<HeaderProps> = ({
       case 'tasks':
         return 'Списки задач';
       case 'editor':
-        return 'Текстовый редактор';
+        return 'Текстовые документы';
       case 'all':
         return 'Все документы';
       case 'settings':
@@ -152,19 +152,19 @@ const Header: React.FC<HeaderProps> = ({
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button size="sm" className="gap-1">
+                    <Button size="sm" className="gap-1 bg-orange-500 hover:bg-orange-600 text-white">
                       <Plus size={16} />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuItem onClick={onAddTask}>
-                      Список
+                    <DropdownMenuItem onClick={onAddTask} className="text-green-600 font-medium">
+                      📋 Список
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={onAddNote}>
-                      Заметка
+                    <DropdownMenuItem onClick={onAddNote} className="text-blue-600 font-medium">
+                      📝 Заметка
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={onAddEditor}>
-                      Документ
+                    <DropdownMenuItem onClick={onAddEditor} className="text-purple-600 font-medium">
+                      📄 Документ
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -173,16 +173,23 @@ const Header: React.FC<HeaderProps> = ({
 
             {/* Add buttons for specific modes */}
             {mode === 'notes' && (
-              <Button onClick={onAddNote} size="sm" className="gap-2">
+              <Button onClick={onAddNote} size="sm" className="gap-2 bg-blue-500 hover:bg-blue-600 text-white">
                 <Plus size={16} />
                 Создать заметку
               </Button>
             )}
 
             {mode === 'tasks' && (
-              <Button onClick={onAddTask} size="sm" className="gap-2">
+              <Button onClick={onAddTask} size="sm" className="gap-2 bg-green-500 hover:bg-green-600 text-white">
                 <Plus size={16} />
                 Создать список
+              </Button>
+            )}
+
+            {mode === 'editor' && (
+              <Button onClick={onAddEditor} size="sm" className="gap-2 bg-purple-500 hover:bg-purple-600 text-white">
+                <Plus size={16} />
+                Создать документ
               </Button>
             )}
 
