@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'sticky-notes-v3';
+const CACHE_NAME = 'sticky-notes-v4';
 
 // Определяем базовый путь в зависимости от окружения
 const getBasePath = () => {
@@ -17,8 +17,6 @@ const urlsToCache = [
   `${BASE_PATH}/index.html`,
   `${BASE_PATH}/manifest.json`,
   `${BASE_PATH}/placeholder.svg`,
-  // Добавляем статические ресурсы
-  `${BASE_PATH}/assets/easymde.min.css`,
 ];
 
 // Кэшируем динамические ресурсы
@@ -34,12 +32,14 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Service Worker: Кэширование файлов');
-        return cache.addAll(urlsToCache).catch((error) => {
-          console.log('Некоторые ресурсы не удалось закэшировать:', error);
-          return Promise.allSettled(
-            urlsToCache.map(url => cache.add(url))
-          );
-        });
+        return Promise.allSettled(
+          urlsToCache.map(url => 
+            cache.add(url).catch(error => {
+              console.log(`Не удалось закэшировать ${url}:`, error);
+              return null;
+            })
+          )
+        );
       })
   );
   self.skipWaiting();
@@ -70,24 +70,50 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Для статических ресурсов используем стратегию cache-first
+  if (event.request.url.includes('/assets/')) {
+    event.respondWith(
+      caches.match(event.request)
+        .then((response) => {
+          if (response) {
+            return response;
+          }
+          return fetch(event.request).then((response) => {
+            if (response && response.status === 200) {
+              const responseToCache = response.clone();
+              caches.open(CACHE_NAME)
+                .then((cache) => {
+                  cache.put(event.request, responseToCache);
+                });
+            }
+            return response;
+          });
+        })
+        .catch(() => {
+          return new Response('Asset not available offline', { 
+            status: 503,
+            headers: { 'Content-Type': 'text/plain' }
+          });
+        })
+    );
+    return;
+  }
+
+  // Для остальных запросов
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
-        // Возвращаем кэшированную версию если есть
         if (response) {
           return response;
         }
         
-        // Клонируем запрос
         const fetchRequest = event.request.clone();
         
         return fetch(fetchRequest).then((response) => {
-          // Проверяем валидность ответа
           if(!response || response.status !== 200 || response.type !== 'basic') {
             return response;
           }
 
-          // Кэшируем динамические ресурсы
           const shouldCache = dynamicCacheUrls.some(pattern => 
             pattern.test(event.request.url)
           );
@@ -104,19 +130,17 @@ self.addEventListener('fetch', (event) => {
         });
       })
       .catch(() => {
-        // Fallback для HTML страниц
         if (event.request.destination === 'document') {
           return caches.match(`${BASE_PATH}/`) || 
                  caches.match(`${BASE_PATH}/index.html`);
         }
         
-        // Fallback для изображений
         if (event.request.destination === 'image') {
           return caches.match(`${BASE_PATH}/placeholder.svg`);
         }
         
         return new Response('Offline content not available', { 
-          status: 200,
+          status: 503,
           headers: { 'Content-Type': 'text/plain' }
         });
       })

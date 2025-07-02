@@ -25,23 +25,19 @@
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://lovable.dev/" />
+    <meta property="og:url" content="https://finn013.github.io/005-007/" />
     <meta property="og:title" content="Заметки - Sticky Note Scribe" />
     <meta property="og:description" content="Мобильное приложение для создания и управления заметками" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta property="og:image" content="https://finn013.github.io/005-007/placeholder.svg" />
     <meta property="og:site_name" content="Заметки" />
     <meta property="og:locale" content="ru_RU" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="https://lovable.dev/" />
+    <meta name="twitter:url" content="https://finn013.github.io/005-007/" />
     <meta name="twitter:title" content="Заметки - Sticky Note Scribe" />
     <meta name="twitter:description" content="Мобильное приложение для создания и управления заметками" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-    <meta name="twitter:site" content="@lovable_dev" />
-
-    <!-- Preload критических ресурсов -->
-    <link rel="preload" href="./src/main.tsx" as="script" />
+    <meta name="twitter:image" content="https://finn013.github.io/005-007/placeholder.svg" />
     
     <!-- DNS prefetch для внешних ресурсов -->
     <link rel="dns-prefetch" href="//fonts.googleapis.com" />
@@ -108,21 +104,20 @@
       // Регистрация Service Worker
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          const basePath = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-            ? '/sw.js' 
-            : '/005-007/sw.js';
+          const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+          const swPath = isLocalhost ? '/sw.js' : '/005-007/sw.js';
           
-          navigator.serviceWorker.register(basePath)
+          navigator.serviceWorker.register(swPath)
             .then((registration) => {
-              console.log('SW registered: ', registration);
+              console.log('SW registered successfully');
               
               // Проверяем обновления каждые 60 секунд
               setInterval(() => {
                 registration.update();
               }, 60000);
             })
-            .catch((registrationError) => {
-              console.log('SW registration failed: ', registrationError);
+            .catch((error) => {
+              console.warn('SW registration failed:', error);
             });
         });
       }
@@ -132,7 +127,6 @@
       window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        // Можно показать кнопку установки
         console.log('PWA install prompt available');
       });
 
