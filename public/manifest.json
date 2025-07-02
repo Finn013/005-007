@@ -2,13 +2,13 @@
 {
   "name": "Заметки - Sticky Note Scribe",
   "short_name": "Заметки",
-  "description": "Мобильное приложение для создания и управления заметками",
+  "description": "Мобильное приложение для создания и управления заметками с поддержкой offline режима",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#3b82f6",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "./placeholder.svg",
@@ -24,5 +24,50 @@
     }
   ],
   "categories": ["productivity", "utilities"],
-  "lang": "ru"
+  "lang": "ru",
+  "screenshots": [
+    {
+      "src": "./placeholder.svg",
+      "sizes": "1280x720",
+      "type": "image/svg+xml",
+      "form_factor": "wide"
+    },
+    {
+      "src": "./placeholder.svg", 
+      "sizes": "750x1334",
+      "type": "image/svg+xml",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Создать заметку",
+      "short_name": "Заметка",
+      "description": "Создать быструю заметку",
+      "url": "/?mode=notes",
+      "icons": [
+        {
+          "src": "./placeholder.svg",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Создать список",
+      "short_name": "Список", 
+      "description": "Создать список задач",
+      "url": "/?mode=tasks",
+      "icons": [
+        {
+          "src": "./placeholder.svg",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "features": ["CrossOriginIsolated"],
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  }
 }
