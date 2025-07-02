@@ -2,10 +2,10 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { StickyNote, Edit3, FolderOpen, CheckSquare, Settings } from 'lucide-react';
+import { StickyNote, Edit3, FolderOpen, CheckSquare, Settings, Trash2 } from 'lucide-react';
 
 interface ModeSelectorProps {
-  onSelectMode: (mode: 'notes' | 'tasks' | 'editor' | 'all' | 'settings') => void;
+  onSelectMode: (mode: 'notes' | 'tasks' | 'editor' | 'all' | 'settings' | 'trash') => void;
 }
 
 const ModeSelector: React.FC<ModeSelectorProps> = ({ onSelectMode }) => {
@@ -21,7 +21,7 @@ const ModeSelector: React.FC<ModeSelectorProps> = ({ onSelectMode }) => {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
-        <Card className="mode-card-tasks cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105">
+        <Card className="mode-card-tasks cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-green-50/50">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 p-3 bg-green-100 rounded-full w-fit">
               <CheckSquare size={32} className="text-green-600" />
@@ -41,7 +41,7 @@ const ModeSelector: React.FC<ModeSelectorProps> = ({ onSelectMode }) => {
           </CardContent>
         </Card>
 
-        <Card className="mode-card-notes cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105">
+        <Card className="mode-card-notes cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-blue-50/50">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 p-3 bg-blue-100 rounded-full w-fit">
               <StickyNote size={32} className="text-blue-600" />
@@ -61,7 +61,7 @@ const ModeSelector: React.FC<ModeSelectorProps> = ({ onSelectMode }) => {
           </CardContent>
         </Card>
 
-        <Card className="mode-card-editor cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105">
+        <Card className="mode-card-editor cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-purple-50/50">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 p-3 bg-purple-100 rounded-full w-fit">
               <Edit3 size={32} className="text-purple-600" />
@@ -81,7 +81,7 @@ const ModeSelector: React.FC<ModeSelectorProps> = ({ onSelectMode }) => {
           </CardContent>
         </Card>
 
-        <Card className="mode-card-all cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105">
+        <Card className="mode-card-all cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-orange-50/50">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 p-3 bg-orange-100 rounded-full w-fit">
               <FolderOpen size={32} className="text-orange-600" />
@@ -102,13 +102,20 @@ const ModeSelector: React.FC<ModeSelectorProps> = ({ onSelectMode }) => {
         </Card>
       </div>
 
-      <div className="mt-8 text-center">
+      <div className="mt-8 flex justify-center gap-4">
         <Button 
           onClick={() => onSelectMode('settings')} 
           className="bg-gray-700 hover:bg-gray-800 text-white px-8 border-2 border-gray-800"
         >
           <Settings size={16} className="mr-2" />
           Общие настройки
+        </Button>
+        <Button 
+          onClick={() => onSelectMode('trash')} 
+          className="bg-red-600 hover:bg-red-700 text-white px-8 border-2 border-red-700"
+        >
+          <Trash2 size={16} className="mr-2" />
+          Корзина
         </Button>
       </div>
     </div>

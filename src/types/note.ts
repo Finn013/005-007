@@ -1,13 +1,21 @@
 
+export interface ListItem {
+  id: string;
+  text: string;
+  completed: boolean;
+  order: number;
+}
+
 export interface Note {
   id: string;
   title: string;
   content: string;
   htmlContent?: string;
   markdownContent?: string;
-  editorType?: 'rich' | 'markdown';
+  editorType?: 'markdown' | 'rich';
   createdAt: string;
   updatedAt: string;
+  deletedAt?: string; // Дата удаления для корзины
   color: string;
   fontSize: 'small' | 'medium' | 'large';
   isSelected: boolean;
@@ -16,15 +24,9 @@ export interface Note {
   listItems?: ListItem[];
 }
 
-export interface ListItem {
-  id: string;
-  text: string;
-  completed: boolean;
-  order?: number;
-}
-
 export interface AppSettings {
   theme: 'light' | 'dark';
   globalFontSize: 'small' | 'medium' | 'large';
-  sortBy: 'date' | 'title' | 'manual' | 'tags' | 'type' | 'color';
+  sortBy: 'date' | 'title' | 'tags' | 'type' | 'color' | 'manual';
+  trashRetentionDays?: number; // -1 для бессрочного хранения
 }

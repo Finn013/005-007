@@ -2,7 +2,8 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Download, Upload, Info, User } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, Download, Upload, Info, User, Trash2 } from 'lucide-react';
 import { AppSettings } from '../types/note';
 
 interface SettingsPageProps {
@@ -97,10 +98,39 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
             </CardContent>
           </Card>
 
+          {/* Настройки корзины */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trash2 size={20} />
+                Настройки корзины
+              </CardTitle>
+              <CardDescription>Время хранения удаленных документов</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Select
+                value={settings.trashRetentionDays?.toString() || '7'}
+                onValueChange={(value) => onSettingsChange({ trashRetentionDays: parseInt(value) })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Выберите время хранения" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 день</SelectItem>
+                  <SelectItem value="3">3 дня</SelectItem>
+                  <SelectItem value="7">7 дней</SelectItem>
+                  <SelectItem value="14">14 дней</SelectItem>
+                  <SelectItem value="30">30 дней</SelectItem>
+                  <SelectItem value="-1">Бессрочно</SelectItem>
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+
           {/* Импорт/Экспорт */}
           <Card>
             <CardHeader>
-              <CardTitle>Импорт и экспорт дан ных</CardTitle>
+              <CardTitle>Импорт и экспорт данных</CardTitle>
               <CardDescription>Сохраните свои заметки или загрузите резервную копию</CardDescription>
             </CardHeader>
             <CardContent>
@@ -135,29 +165,43 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
               <div className="space-y-2">
                 <h4 className="font-semibold flex items-center gap-2">
                   <Info size={16} />
-                  Как использовать
+                  Возможности приложения
                 </h4>
                 <p className="text-sm text-muted-foreground">
-                  • Создавайте быстрые заметки для записи идей<br />
-                  • Ведите списки задач с возможностью отмечать выполненные<br />
-                  • Используйте текстовый редактор для форматированных документов<br />
-                  • Экспортируйте данные для резервного копирования
+                  • <strong>Быстрые заметки</strong> - создание простых текстовых заметок с тегами и цветовой маркировкой<br />
+                  • <strong>Списки задач</strong> - интерактивные списки с возможностью отмечать выполненные пункты<br />
+                  • <strong>Markdown редактор</strong> - полноценный редактор с поддержкой форматирования, таблиц, ссылок и изображений<br />
+                  • <strong>Умная корзина</strong> - безопасное удаление с возможностью восстановления<br />
+                  • <strong>Экспорт/импорт</strong> - резервное копирование в форматах JSON, HTML, TXT, MD<br />
+                  • <strong>Визуальная дифференциация</strong> - цветные обводки и свечение для разных типов документов
                 </p>
               </div>
               
               <div className="space-y-2">
-                <h4 className="font-semibold">Структура</h4>
+                <h4 className="font-semibold">Архитектура</h4>
                 <p className="text-sm text-muted-foreground">
-                  Приложение построено на React с использованием TypeScript, 
-                  Tailwind CSS и shadcn/ui компонентов. Все данные хранятся 
-                  локально в браузере.
+                  Приложение построено на современной архитектуре с использованием:
+                  React 18 + TypeScript для типобезопасности, Tailwind CSS для стилизации,
+                  shadcn/ui для UI компонентов, EasyMDE для Markdown редактирования.
+                  Все данные хранятся локально в браузере с автоматическим сохранением.
                 </p>
               </div>
               
               <div className="space-y-2">
-                <h4 className="font-semibold">Технологии</h4>
+                <h4 className="font-semibold">Технологический стек</h4>
                 <p className="text-sm text-muted-foreground">
-                  React, TypeScript, Tailwind CSS, Vite, shadcn/ui
+                  React 18, TypeScript, Tailwind CSS, Vite, shadcn/ui, EasyMDE, 
+                  Lucide Icons, date-fns для работы с датами
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <h4 className="font-semibold">Особенности редактора</h4>
+                <p className="text-sm text-muted-foreground">
+                  Полная поддержка Markdown синтаксиса, HTML с inline-стилями,
+                  предпросмотр в реальном времени, полноэкранный режим,
+                  режим бок о бок, автосохранение, подсветка синтаксиса,
+                  вставка символов и эмодзи, цветовое выделение текста
                 </p>
               </div>
               
@@ -167,7 +211,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                   Разработчик
                 </h4>
                 <p className="text-sm text-muted-foreground">
-                  Nott
+                  Nott - Система заметок и документооборота v2.0
                 </p>
               </div>
             </CardContent>

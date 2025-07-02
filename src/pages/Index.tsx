@@ -5,6 +5,7 @@ import NoteCard from '../components/NoteCard';
 import ModeSelector from '../components/ModeSelector';
 import EditorPage from '../components/EditorPage';
 import SettingsPage from '../components/SettingsPage';
+import TrashPage from '../components/TrashPage';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { Note, AppSettings } from '../types/note';
 import { exportNotes, importNotes } from '../utils/exportUtils';
@@ -14,12 +15,14 @@ const defaultSettings: AppSettings = {
   theme: 'light',
   globalFontSize: 'medium',
   sortBy: 'date',
+  trashRetentionDays: 7,
 };
 
-type ViewMode = 'selector' | 'notes' | 'tasks' | 'editor' | 'all' | 'editing' | 'settings';
+type ViewMode = 'selector' | 'notes' | 'tasks' | 'editor' | 'all' | 'editing' | 'settings' | 'trash';
 
 const Index = () => {
   const [notes, setNotes] = useLocalStorage<Note[]>('sticky-notes', []);
+  const [trashedNotes, setTrashedNotes] = useLocalStorage<Note[]>('trashed-notes', []);
   const [settings, setSettings] = useLocalStorage<AppSettings>('app-settings', defaultSettings);
   const [viewMode, setViewMode] = useState<ViewMode>('selector');
   const [editingNote, setEditingNote] = useState<Note | undefined>(undefined);
@@ -113,10 +116,54 @@ const Index = () => {
   };
 
   const deleteNote = (id: string) => {
-    setNotes(notes.filter(note => note.id !== id));
+    const noteToDelete = notes.find(note => note.id === id);
+    if (noteToDelete) {
+      // Перемещаем в корзину
+      const trashedNote = {
+        ...noteToDelete,
+        deletedAt: new Date().toISOString()
+      };
+      setTrashedNotes([trashedNote, ...trashedNotes]);
+      setNotes(notes.filter(note => note.id !== id));
+      toast({
+        title: "Заметка перемещена в корзину",
+        description: "Заметка была перемещена в корзину и может быть восстановлена",
+      });
+    }
+  };
+
+  const restoreNote = (id: string) => {
+    const noteToRestore = trashedNotes.find(note => note.id === id);
+    if (noteToRestore) {
+      const restoredNote = {
+        ...noteToRestore,
+        deletedAt: undefined,
+        updatedAt: new Date().toISOString()
+      };
+      setNotes([restoredNote, ...notes]);
+      setTrashedNotes(trashedNotes.filter(note => note.id !== id));
+      toast({
+        title: "Заметка восстановлена",
+        description: "Заметка была успешно восстановлена из корзины",
+      });
+    }
+  };
+
+  const deletePermanently = (id: string) => {
+    setTrashedNotes(trashedNotes.filter(note => note.id !== id));
     toast({
-      title: "Заметка удалена",
-      description: "Заметка была успешно удалена",
+      title: "Заметка удалена навсегда",
+      description: "Заметка была окончательно удалена",
+      variant: "destructive",
+    });
+  };
+
+  const emptyTrash = () => {
+    setTrashedNotes([]);
+    toast({
+      title: "Корзина очищена",
+      description: "Все документы были окончательно удалены",
+      variant: "destructive",
     });
   };
 
@@ -236,7 +283,7 @@ const Index = () => {
     });
   };
 
-  const handleModeSelect = (mode: 'notes' | 'tasks' | 'editor' | 'all' | 'settings') => {
+  const handleModeSelect = (mode: 'notes' | 'tasks' | 'editor' | 'all' | 'settings' | 'trash') => {
     if (mode === 'editor') {
       createEditor();
     } else {
@@ -313,6 +360,19 @@ const Index = () => {
         onSettingsChange={updateSettings}
         onImportNotes={handleImportNotes}
         onExportAllNotes={handleExportAllNotes}
+      />
+    );
+  }
+
+  if (viewMode === 'trash') {
+    return (
+      <TrashPage
+        onBack={() => setViewMode('selector')}
+        trashedNotes={trashedNotes}
+        onRestore={restoreNote}
+        onDeletePermanently={deletePermanently}
+        onEmptyTrash={emptyTrash}
+        trashRetentionDays={settings.trashRetentionDays || 7}
       />
     );
   }
