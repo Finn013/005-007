@@ -32,12 +32,13 @@ export default defineConfig(({ mode }) => ({
           ui: ['@radix-ui/react-dialog', '@radix-ui/react-toast', '@radix-ui/react-tabs'],
         },
         assetFileNames: (assetInfo) => {
-          const info = assetInfo.name.split('.');
+          const name = assetInfo.name || 'asset';
+          const info = name.split('.');
           const ext = info[info.length - 1];
-          if (/\.(css)$/.test(assetInfo.name)) {
+          if (/\.(css)$/.test(name)) {
             return `assets/css/[name]-[hash][extname]`;
           }
-          if (/\.(png|jpe?g|svg|gif|tiff|bmp|ico)$/i.test(assetInfo.name)) {
+          if (/\.(png|jpe?g|svg|gif|tiff|bmp|ico)$/i.test(name)) {
             return `assets/images/[name]-[hash][extname]`;
           }
           return `assets/[name]-[hash][extname]`;
