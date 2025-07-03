@@ -69,6 +69,33 @@
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+  
+  /* Мобильные стили для предотвращения горизонтального скролла */
+  @media (max-width: 768px) {
+    body {
+      overflow-x: hidden;
+    }
+    
+    .container {
+      padding-left: 1rem;
+      padding-right: 1rem;
+      max-width: 100vw;
+    }
+    
+    /* Исправление сдвига контента при открытии меню */
+    [data-radix-popper-content-wrapper] {
+      transform: none !important;
+      position: fixed !important;
+    }
+    
+    /* Обеспечиваем корректное отображение header на мобильных */
+    .sticky {
+      position: -webkit-sticky;
+      position: sticky;
+      width: 100%;
+      z-index: 50;
+    }
+  }
 }
 
 /* Дополнительные стили для типов записей с увеличенной толщиной */

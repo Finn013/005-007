@@ -5,6 +5,17 @@ export const exportNotes = async (notes: Note[], fileName: string = 'notes.json'
   const dataStr = JSON.stringify(notes, null, 2);
   const blob = new Blob([dataStr], { type: 'application/json' });
   
+  // Проверяем наличие Android JavaScript интерфейса для APK
+  if (typeof (window as any).Android !== 'undefined' && (window as any).Android.shareText) {
+    try {
+      const shareText = `Экспорт заметок:\n\n${JSON.stringify(notes, null, 2)}`;
+      (window as any).Android.shareText(shareText);
+      return;
+    } catch (error) {
+      console.log('Ошибка Android share interface, используем Web Share API');
+    }
+  }
+  
   // Проверяем поддержку Web Share API для мобильных устройств
   if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], fileName)] })) {
     try {

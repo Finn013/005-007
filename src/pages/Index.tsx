@@ -204,8 +204,19 @@ const Index = () => {
       }));
       setNotes([...notesWithNewIds, ...notes]);
       
-      // Проверяем поддержку Web Share API для мобильных устройств
-      if (navigator.share && /Mobi|Android/i.test(navigator.userAgent)) {
+      // Проверяем наличие Android JavaScript интерфейса для APK
+      if (typeof (window as any).Android !== 'undefined' && (window as any).Android.shareText) {
+        try {
+          const shareText = `Импорт завершён. Импортировано заметок: ${importedNotes.length}`;
+          (window as any).Android.shareText(shareText);
+        } catch (shareError) {
+          console.log('Ошибка Android share interface, используем Web Share API');
+          toast({
+            title: "Импорт завершён",
+            description: `Импортировано заметок: ${importedNotes.length}`,
+          });
+        }
+      } else if (navigator.share && /Mobi|Android/i.test(navigator.userAgent)) {
         try {
           const shareText = `Импортировано заметок: ${importedNotes.length}`;
           await navigator.share({

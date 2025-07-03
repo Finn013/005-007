@@ -140,13 +140,25 @@ const NoteCard: React.FC<NoteCardProps> = ({
   };
 
   const handleShare = async () => {
-    let shareText = note.content;
+    let shareText = `${note.title}\n\n`;
     if (note.type === 'list' && note.listItems) {
-      shareText = note.listItems.map(item => 
+      shareText += note.listItems.map(item => 
         `${item.completed ? '✓' : '○'} ${item.text}`
       ).join('\n');
     } else if (note.type === 'editor' && note.htmlContent) {
-      shareText = note.htmlContent.replace(/<[^>]*>/g, '');
+      shareText += note.htmlContent.replace(/<[^>]*>/g, '');
+    } else {
+      shareText += note.content;
+    }
+    
+    // Проверяем наличие Android JavaScript интерфейса для APK
+    if (typeof (window as any).Android !== 'undefined' && (window as any).Android.shareText) {
+      try {
+        (window as any).Android.shareText(shareText);
+        return;
+      } catch (error) {
+        console.log('Ошибка Android share interface, используем Web Share API');
+      }
     }
     
     const shareData = {
