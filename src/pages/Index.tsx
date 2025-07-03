@@ -203,10 +203,31 @@ const Index = () => {
         type: note.type || 'note' as const,
       }));
       setNotes([...notesWithNewIds, ...notes]);
-      toast({
-        title: "Импорт завершён",
-        description: `Импортировано заметок: ${importedNotes.length}`,
-      });
+      
+      // Проверяем поддержку Web Share API для мобильных устройств
+      if (navigator.share && /Mobi|Android/i.test(navigator.userAgent)) {
+        try {
+          const shareText = `Импортировано заметок: ${importedNotes.length}`;
+          await navigator.share({
+            title: 'Импорт завершён',
+            text: shareText,
+          });
+        } catch (shareError) {
+          // Если пользователь отменил отправку, показываем обычный toast
+          if (shareError instanceof Error && shareError.name !== 'AbortError') {
+            console.log('Ошибка Web Share API, используем обычный toast');
+          }
+          toast({
+            title: "Импорт завершён",
+            description: `Импортировано заметок: ${importedNotes.length}`,
+          });
+        }
+      } else {
+        toast({
+          title: "Импорт завершён",
+          description: `Импортировано заметок: ${importedNotes.length}`,
+        });
+      }
     } catch (error) {
       toast({
         title: "Ошибка импорта",

@@ -184,14 +184,6 @@ const Header: React.FC<HeaderProps> = ({
                     <Plus size={16} />
                     Создать заметку
                   </Button>
-                  <Button 
-                    onClick={() => setImageDialogOpen(true)} 
-                    size="sm" 
-                    className="gap-2 bg-green-500 hover:bg-green-600 text-white border-2 border-green-600"
-                  >
-                    <Image size={16} />
-                    Изображение
-                  </Button>
                 </>
               )}
 
