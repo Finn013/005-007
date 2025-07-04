@@ -128,12 +128,21 @@
       font-size: 1rem !important;
     }
     
-    /* Адаптация кнопок при большом шрифте */
+  /* Адаптация кнопок при большом шрифте */
     button {
       min-height: 2.5rem;
       word-wrap: break-word;
       white-space: normal;
       text-overflow: ellipsis;
+      max-width: 100%;
+      overflow: hidden;
+    }
+    
+    /* Исправление переполнения текста в кнопках */
+    button span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     
     /* Адаптация для мелких экранов с большим шрифтом */
