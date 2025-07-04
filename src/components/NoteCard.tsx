@@ -646,7 +646,19 @@ const NoteCard: React.FC<NoteCardProps> = ({
           </DialogHeader>
           <div className="flex flex-col items-center space-y-4">
             <img 
-              src={generateQRCodeURL(`${note.title}\n\n${note.type === 'editor' && note.htmlContent ? note.htmlContent.replace(/<[^>]*>/g, '') : note.content}`)}
+              src={generateQRCodeURL((() => {
+                let qrText = `${note.title}\n\n`;
+                if (note.type === 'list' && note.listItems) {
+                  qrText += note.listItems.map(item => 
+                    `${item.completed ? '✓' : '○'} ${item.text}`
+                  ).join('\n');
+                } else if (note.type === 'editor' && note.htmlContent) {
+                  qrText += note.htmlContent.replace(/<[^>]*>/g, '');
+                } else {
+                  qrText += note.content;
+                }
+                return qrText;
+              })())}
               alt="QR Code"
               className="border rounded max-w-full"
             />

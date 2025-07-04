@@ -74,18 +74,27 @@
   @media (max-width: 768px) {
     body {
       overflow-x: hidden;
+      width: 100vw;
     }
     
     .container {
       padding-left: 1rem;
       padding-right: 1rem;
       max-width: 100vw;
+      overflow-x: hidden;
     }
     
     /* Исправление сдвига контента при открытии меню */
     [data-radix-popper-content-wrapper] {
       transform: none !important;
       position: fixed !important;
+      z-index: 999 !important;
+    }
+    
+    /* Предотвращение сжатия контента при открытии dropdown */
+    [data-radix-dropdown-menu-content] {
+      position: fixed !important;
+      z-index: 999 !important;
     }
     
     /* Обеспечиваем корректное отображение header на мобильных */
@@ -93,7 +102,57 @@
       position: -webkit-sticky;
       position: sticky;
       width: 100%;
+      max-width: 100vw;
       z-index: 50;
+      left: 0;
+      right: 0;
+    }
+    
+    /* Исправление переполнения header */
+    header {
+      width: 100%;
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
+    
+    /* Предотвращение горизонтального скролла в grid */
+    .grid {
+      width: 100%;
+      max-width: 100vw;
+    }
+  }
+  
+  /* Адаптация для больших размеров шрифта */
+  @media (max-width: 768px) {
+    .text-large {
+      font-size: 1rem !important;
+    }
+    
+    /* Адаптация кнопок при большом шрифте */
+    button {
+      min-height: 2.5rem;
+      word-wrap: break-word;
+      white-space: normal;
+      text-overflow: ellipsis;
+    }
+    
+    /* Адаптация для мелких экранов с большим шрифтом */
+    .gap-2 {
+      gap: 0.25rem;
+    }
+    
+    .gap-4 {
+      gap: 0.5rem;
+    }
+    
+    /* Уменьшение отступов при большом шрифте */
+    .p-4 {
+      padding: 0.75rem;
+    }
+    
+    .px-4 {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
     }
   }
 }

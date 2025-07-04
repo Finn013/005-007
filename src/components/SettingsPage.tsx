@@ -211,7 +211,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                   Разработчик
                 </h4>
                 <p className="text-sm text-muted-foreground">
-                  Nott - Система заметок и документооборота v2.0
+                  Nott_013 - Система заметок и документооборота v2.0
                 </p>
               </div>
             </CardContent>
