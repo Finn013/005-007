@@ -518,28 +518,12 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 
           {/* Symbol Tools */}
           <div className="flex gap-2 border-r-2 border-purple-300 pr-3 mr-3">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const symbol = prompt('Введите символ для вставки:');
-                    if (symbol) insertSymbol(symbol);
-                  }}
-                  className="gap-2 border-2 border-yellow-400 hover:border-yellow-600 text-yellow-700 hover:text-yellow-900"
-                >
-                  ✏️ Символ
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Вставить пользовательский символ</TooltipContent>
-            </Tooltip>
             
             <Popover>
               <PopoverTrigger asChild>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button 
+                    <Button
                       variant="outline" 
                       size="sm" 
                       className="gap-2 border-2 border-orange-400 hover:border-orange-600 text-orange-700 hover:text-orange-900"
@@ -551,18 +535,74 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
                 </Tooltip>
               </PopoverTrigger>
               <PopoverContent className="w-80 bg-popover border-2 border-gray-300">
-                <div className="grid grid-cols-8 gap-2">
-                  {commonSymbols.map((symbol) => (
-                    <Button
-                      key={symbol}
-                      size="sm"
-                      variant="outline"
-                      className="h-8 w-8 p-0 text-lg border-2 border-gray-300 hover:border-gray-500"
-                      onClick={() => insertSymbol(symbol)}
-                    >
-                      {symbol}
-                    </Button>
-                  ))}
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Основные символы</h4>
+                    <div className="grid grid-cols-8 gap-2">
+                      {commonSymbols.map((symbol) => (
+                        <Button
+                          key={symbol}
+                          size="sm"
+                          variant="outline"
+                          className="h-8 w-8 p-0 text-lg border-2 border-gray-300 hover:border-gray-500"
+                          onClick={() => insertSymbol(symbol)}
+                        >
+                          {symbol}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Математические символы</h4>
+                    <div className="grid grid-cols-8 gap-2">
+                      {['±', '∞', '≈', '≠', '≤', '≥', '∑', '∏', '√', '∆', '∇', '∂', '∫', 'π', 'α', 'β'].map((symbol) => (
+                        <Button
+                          key={symbol}
+                          size="sm"
+                          variant="outline"
+                          className="h-8 w-8 p-0 text-lg border-2 border-gray-300 hover:border-gray-500"
+                          onClick={() => insertSymbol(symbol)}
+                        >
+                          {symbol}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Валюты</h4>
+                    <div className="grid grid-cols-8 gap-2">
+                      {['$', '€', '£', '¥', '₽', '₴', '₿', '¢'].map((symbol) => (
+                        <Button
+                          key={symbol}
+                          size="sm"
+                          variant="outline"
+                          className="h-8 w-8 p-0 text-lg border-2 border-gray-300 hover:border-gray-500"
+                          onClick={() => insertSymbol(symbol)}
+                        >
+                          {symbol}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Специальные символы</h4>
+                    <div className="grid grid-cols-8 gap-2">
+                      {['©', '®', '™', '°', '§', '¶', '†', '‡', '…', '•', '‰', '№', '℃', '℉', '℮', '℠'].map((symbol) => (
+                        <Button
+                          key={symbol}
+                          size="sm"
+                          variant="outline"
+                          className="h-8 w-8 p-0 text-lg border-2 border-gray-300 hover:border-gray-500"
+                          onClick={() => insertSymbol(symbol)}
+                        >
+                          {symbol}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </PopoverContent>
             </Popover>

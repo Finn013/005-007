@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Download, Upload, Info, User, Trash2 } from 'lucide-react';
 import { AppSettings } from '../types/note';
+import { useToast } from '@/hooks/use-toast';
 
 interface SettingsPageProps {
   onBack: () => void;
@@ -21,11 +22,37 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   onImportNotes,
   onExportAllNotes
 }) => {
+  const [updateCode, setUpdateCode] = useState('');
+  const { toast } = useToast();
+
   const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       onImportNotes(file);
       event.target.value = '';
+    }
+  };
+
+  const handleForceUpdate = () => {
+    if (updateCode === 'Nott_013') {
+      // Отправляем сообщение service worker для принудительного обновления
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then((registration) => {
+          registration.active?.postMessage({ type: 'FORCE_UPDATE' });
+        });
+      }
+      
+      toast({
+        title: "Обновление запущено",
+        description: "Приложение будет обновлено и перезагружено...",
+      });
+      
+      // Перезагружаем страницу через 2 секунды
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+      
+      setUpdateCode('');
     }
   };
 
@@ -213,6 +240,38 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                 <p className="text-sm text-muted-foreground">
                   Nott_013 - Система заметок и документооборота v2.0
                 </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* PWA Update Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-medium">Обновление приложения</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Приложение работает в офлайн режиме и использует кешированные данные.
+                  Принудительное обновление загрузит последнюю версию из интернета.
+                </p>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="password"
+                    placeholder="Введите код для обновления"
+                    value={updateCode}
+                    onChange={(e) => setUpdateCode(e.target.value)}
+                    className="flex-1 px-3 py-2 border rounded-md text-sm"
+                  />
+                  <Button
+                    onClick={handleForceUpdate}
+                    disabled={updateCode !== 'Nott_013'}
+                    variant={updateCode === 'Nott_013' ? 'default' : 'outline'}
+                    size="sm"
+                  >
+                    Обновить
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

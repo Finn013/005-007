@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'sticky-notes-v4';
+const CACHE_NAME = 'sticky-notes-v5';
 
 // Определяем базовый путь в зависимости от окружения
 const getBasePath = () => {
@@ -70,16 +70,41 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Для статических ресурсов используем стратегию cache-first
-  if (event.request.url.includes('/assets/')) {
+  // Проверяем флаг принудительного обновления
+  if (self.forceUpdate) {
     event.respondWith(
-      caches.match(event.request)
-        .then((response) => {
-          if (response) {
-            return response;
-          }
-          return fetch(event.request).then((response) => {
-            if (response && response.status === 200) {
+      fetch(event.request).then((response) => {
+        if (response && response.status === 200 && response.type === 'basic') {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME)
+            .then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+        }
+        return response;
+      }).catch(() => {
+        return caches.match(event.request) || 
+               new Response('Content not available', { 
+                 status: 503,
+                 headers: { 'Content-Type': 'text/plain' }
+               });
+      })
+    );
+    return;
+  }
+
+  // Полностью cache-first стратегия - сначала кеш, затем сеть только если нет в кеше
+  event.respondWith(
+    caches.match(event.request)
+      .then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        
+        // Если нет в кеше, загружаем из сети только один раз и кешируем
+        return fetch(event.request)
+          .then((response) => {
+            if (response && response.status === 200 && response.type === 'basic') {
               const responseToCache = response.clone();
               caches.open(CACHE_NAME)
                 .then((cache) => {
@@ -88,48 +113,9 @@ self.addEventListener('fetch', (event) => {
             }
             return response;
           });
-        })
-        .catch(() => {
-          return new Response('Asset not available offline', { 
-            status: 503,
-            headers: { 'Content-Type': 'text/plain' }
-          });
-        })
-    );
-    return;
-  }
-
-  // Для остальных запросов
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        if (response) {
-          return response;
-        }
-        
-        const fetchRequest = event.request.clone();
-        
-        return fetch(fetchRequest).then((response) => {
-          if(!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-
-          const shouldCache = dynamicCacheUrls.some(pattern => 
-            pattern.test(event.request.url)
-          );
-          
-          if (shouldCache) {
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-          }
-
-          return response;
-        });
       })
       .catch(() => {
+        // Офлайн фолбэки
         if (event.request.destination === 'document') {
           return caches.match(`${BASE_PATH}/`) || 
                  caches.match(`${BASE_PATH}/index.html`);
@@ -151,6 +137,18 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+  
+  if (event.data && event.data.type === 'FORCE_UPDATE') {
+    self.forceUpdate = true;
+    // Очищаем кеш для принудительного обновления
+    caches.delete(CACHE_NAME).then(() => {
+      self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          client.postMessage({ type: 'CACHE_CLEARED' });
+        });
+      });
+    });
   }
 });
 
