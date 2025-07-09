@@ -3,6 +3,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import EditorToolbar from './RichTextEditor/EditorToolbar';
 import TableDialog from './TableDialog';
 import LinkDialog from './LinkDialog';
+import SymbolDialog from './SymbolDialog';
 import TableUtils from './RichTextEditor/TableUtils';
 
 interface RichTextEditorProps {
@@ -29,6 +30,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   // Диалоги
   const [tableDialogOpen, setTableDialogOpen] = useState(false);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [symbolDialogOpen, setSymbolDialogOpen] = useState(false);
 
   // Устанавливаем содержимое при изменении пропа content
   useEffect(() => {
@@ -137,6 +139,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     execCommand('insertHTML', tableHTML);
   };
 
+  const insertSymbol = (symbol: string) => {
+    execCommand('insertHTML', symbol);
+  };
+
   const insertLink = (url: string, text: string) => {
     const linkHTML = `<a href="${url}" target="_blank" style="color: #0066cc; text-decoration: underline;">${text}</a>`;
     execCommand('insertHTML', linkHTML);
@@ -166,6 +172,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         onInsertLink={() => setLinkDialogOpen(true)}
         onInsertImage={() => fileInputRef.current?.click()}
         onInsertTable={() => setTableDialogOpen(true)}
+        onInsertSymbol={() => setSymbolDialogOpen(true)}
       />
 
       {/* Rich text editor */}
@@ -209,6 +216,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         open={linkDialogOpen}
         onOpenChange={setLinkDialogOpen}
         onInsertLink={insertLink}
+      />
+
+      <SymbolDialog
+        open={symbolDialogOpen}
+        onOpenChange={setSymbolDialogOpen}
+        onInsertSymbol={insertSymbol}
       />
     </div>
   );

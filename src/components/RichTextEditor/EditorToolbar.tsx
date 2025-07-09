@@ -35,6 +35,7 @@ interface EditorToolbarProps {
   onInsertLink: () => void;
   onInsertImage: () => void;
   onInsertTable: () => void;
+  onInsertSymbol: () => void;
 }
 
 const EditorToolbar: React.FC<EditorToolbarProps> = ({
@@ -45,6 +46,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
   onInsertLink,
   onInsertImage,
   onInsertTable,
+  onInsertSymbol,
 }) => {
   const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -295,6 +297,13 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
           onClick={onInsertTable}
         >
           <Table size={14} />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onInsertSymbol}
+        >
+          🎨
         </Button>
       </div>
     </div>
