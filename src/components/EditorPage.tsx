@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Save, Tag, Plus, X, Code } from 'lucide-react';
@@ -7,20 +7,44 @@ import MarkdownEditor from './MarkdownEditor';
 import TagSelector from './TagSelector';
 import { Note } from '../types/note';
 import { generateUUID } from '../utils/idGenerator';
+import { useDebounce } from '../hooks/useDebounce';
 
 interface EditorPageProps {
   onBack: () => void;
   onSave: (note: Note) => void;
+  onBackgroundSave: (note: Note) => void;
   existingNote?: Note;
 }
 
-const EditorPage: React.FC<EditorPageProps> = ({ onBack, onSave, existingNote }) => {
+const EditorPage: React.FC<EditorPageProps> = ({ onBack, onSave, onBackgroundSave, existingNote }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [htmlContent, setHtmlContent] = useState('');
   const [markdownContent, setMarkdownContent] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const debouncedTitle = useDebounce(title, 1000);
+  const debouncedMarkdownContent = useDebounce(markdownContent, 1000);
+  const debouncedTags = useDebounce(tags, 1000);
+
+  const noteData = useMemo(() => ({
+    id: existingNote?.id || generateUUID(),
+    title: title || 'Без названия',
+    content,
+    htmlContent,
+    markdownContent,
+    editorType: 'markdown',
+    createdAt: existingNote?.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    color: existingNote?.color || '#ffffff',
+    fontSize: existingNote?.fontSize || 'medium',
+    isSelected: false,
+    tags,
+    type: 'editor' as const,
+  }), [existingNote, title, content, htmlContent, markdownContent, tags]);
+
 
   useEffect(() => {
     if (existingNote) {
@@ -33,22 +57,25 @@ const EditorPage: React.FC<EditorPageProps> = ({ onBack, onSave, existingNote })
   }, [existingNote]);
 
   const handleSave = () => {
-    const note: Note = {
-      id: existingNote?.id || generateUUID(),
-      title: title || 'Без названия',
-      content,
-      htmlContent,
-      markdownContent,
-      editorType: 'markdown',
-      createdAt: existingNote?.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      color: existingNote?.color || '#ffffff',
-      fontSize: existingNote?.fontSize || 'medium',
-      isSelected: false,
-      tags,
-      type: 'editor',
-    };
-    onSave(note);
+    onSave(noteData);
+    setIsSaving(true);
+    setTimeout(() => setIsSaving(false), 1000);
+  };
+
+  useEffect(() => {
+    if (existingNote) {
+      const debouncedNoteData = {
+        ...noteData,
+        id: existingNote.id, // Убедимся, что используем ID существующей заметки
+      };
+      onBackgroundSave(debouncedNoteData);
+      setIsSaving(true);
+      setTimeout(() => setIsSaving(false), 1000);
+    }
+  }, [debouncedTitle, debouncedMarkdownContent, debouncedTags]);
+
+  const handleSaveAndExit = () => {
+    onSave(noteData);
   };
 
   const addTag = () => {
@@ -128,9 +155,18 @@ const EditorPage: React.FC<EditorPageProps> = ({ onBack, onSave, existingNote })
               <ArrowLeft size={16} />
               Назад
             </Button>
-            <Button onClick={handleSave} className="gap-2">
-              <Save size={16} />
-              Сохранить
+            <Button onClick={handleSaveAndExit} className="gap-2" disabled={isSaving}>
+              {isSaving ? (
+                <>
+                  <Save size={16} className="animate-pulse" />
+                  Сохранено...
+                </>
+              ) : (
+                <>
+                  <Save size={16} />
+                  Сохранить
+                </>
+              )}
             </Button>
           </div>
           

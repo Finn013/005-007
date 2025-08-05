@@ -31,6 +31,7 @@ import ImageUploadDialog from './ImageUploadDialog';
 interface NoteCardProps {
   note: Note;
   onUpdate: (note: Note) => void;
+  onBackgroundSave: (note: Note) => void;
   onDelete: (id: string) => void;
   onToggleSelect: (id: string) => void;
   onEdit?: (note: Note) => void;
@@ -62,6 +63,7 @@ const darkColors = [
 const NoteCard: React.FC<NoteCardProps> = ({ 
   note, 
   onUpdate, 
+  onBackgroundSave,
   onDelete, 
   onToggleSelect,
   onEdit,
@@ -212,10 +214,12 @@ const NoteCard: React.FC<NoteCardProps> = ({
     setTempListItems([...tempListItems, newItem]);
   };
 
-  const updateListItem = (id: string, text: string) => {
-    setTempListItems(tempListItems.map(item => 
-      item.id === id ? { ...item, text } : item
-    ));
+  const handleListItemChange = (id: string, newText: string) => {
+    const updatedItems = tempListItems.map(item => 
+      item.id === id ? { ...item, text: newText } : item
+    );
+    setTempListItems(updatedItems);
+    onBackgroundSave({ ...note, listItems: updatedItems });
   };
 
   const toggleListItem = (id: string) => {
@@ -229,6 +233,7 @@ const NoteCard: React.FC<NoteCardProps> = ({
     });
     
     setTempListItems(sortedItems);
+    onBackgroundSave({ ...note, listItems: sortedItems });
   };
 
   const deleteListItem = (id: string) => {
@@ -572,7 +577,7 @@ const NoteCard: React.FC<NoteCardProps> = ({
                       />
                       <Input
                         value={item.text}
-                        onChange={(e) => updateListItem(item.id, e.target.value)}
+                        onChange={(e) => handleListItemChange(item.id, e.target.value)}
                         className={`flex-1 text-sm ${item.completed ? 'line-through opacity-60' : ''}`}
                         placeholder="Пункт списка"
                       />

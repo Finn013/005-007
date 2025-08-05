@@ -101,7 +101,13 @@ const Index = () => {
 
   const updateNote = (updatedNote: Note) => {
     setNotes(notes.map(note => 
-      note.id === updatedNote.id ? updatedNote : note
+      note.id === updatedNote.id ? { ...updatedNote, updatedAt: new Date().toISOString() } : note
+    ));
+  };
+
+  const updateNoteInBackground = (updatedNote: Note) => {
+    setNotes(notes.map(note => 
+      note.id === updatedNote.id ? { ...updatedNote, updatedAt: new Date().toISOString() } : note
     ));
   };
 
@@ -378,6 +384,7 @@ const Index = () => {
       <EditorPage
         onBack={() => setViewMode('selector')}
         onSave={saveEditorNote}
+        onBackgroundSave={updateNoteInBackground}
         existingNote={editingNote}
       />
     );
@@ -476,6 +483,7 @@ const Index = () => {
                 key={note.id}
                 note={note}
                 onUpdate={updateNote}
+                onBackgroundSave={updateNoteInBackground}
                 onDelete={deleteNote}
                 onToggleSelect={toggleSelectNote}
                 onReorder={handleReorderNotes}
