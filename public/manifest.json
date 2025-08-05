@@ -11,31 +11,35 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "./placeholder.svg",
+      "src": "./icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
-      "src": "./placeholder.svg",
+      "src": "./icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png"
+    },
+    {
+      "src": "./maskable-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "categories": ["productivity", "utilities"],
   "lang": "ru",
   "screenshots": [
     {
-      "src": "./placeholder.svg",
+      "src": "./icon-512x512.png",
       "sizes": "1280x720",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "form_factor": "wide"
     },
     {
-      "src": "./placeholder.svg", 
+      "src": "./icon-512x512.png", 
       "sizes": "750x1334",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "form_factor": "narrow"
     }
   ],
@@ -47,7 +51,7 @@
       "url": "/?mode=notes",
       "icons": [
         {
-          "src": "./placeholder.svg",
+          "src": "./icon-192x192.png",
           "sizes": "96x96"
         }
       ]
@@ -59,7 +63,7 @@
       "url": "/?mode=tasks",
       "icons": [
         {
-          "src": "./placeholder.svg",
+          "src": "./icon-192x192.png",
           "sizes": "96x96"
         }
       ]

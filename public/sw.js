@@ -1,52 +1,31 @@
-
-const CACHE_NAME = 'sticky-notes-v5';
-
-// Определяем базовый путь в зависимости от окружения
-const getBasePath = () => {
-  const hostname = self.location.hostname;
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return '';
-  }
-  return '/005-007';
-};
-
-const BASE_PATH = getBasePath();
-
+const CACHE_NAME = 'sticky-notes-v6'; // Меняем версию кэша
 const urlsToCache = [
-  `${BASE_PATH}/`,
-  `${BASE_PATH}/index.html`,
-  `${BASE_PATH}/manifest.json`,
-  `${BASE_PATH}/placeholder.svg`,
-];
-
-// Кэшируем динамические ресурсы
-const dynamicCacheUrls = [
-  /\/assets\/.*\.(js|css|woff2?|svg|png|jpg|jpeg|gif|webp)$/,
-  /\/api\//,
-  /\/fonts\//
+  '/005-007/',
+  '/005-007/index.html',
+  '/005-007/manifest.json',
+  '/005-007/icon-192x192.png',
+  '/005-007/icon-512x512.png',
+  '/005-007/apple-touch-icon.png',
+  '/005-007/favicon.ico',
+  '/005-007/maskable-icon.png',
+  // Добавь сюда пути ко ВСЕМ твоим файлам после сборки (JS, CSS, шрифты)
+  // Этот список мы позже сделаем автоматическим
 ];
 
 self.addEventListener('install', (event) => {
-  console.log('Service Worker: Установка');
+  console.log('Service Worker: Установка новой версии');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Service Worker: Кэширование файлов');
-        return Promise.allSettled(
-          urlsToCache.map(url => 
-            cache.add(url).catch(error => {
-              console.log(`Не удалось закэшировать ${url}:`, error);
-              return null;
-            })
-          )
-        );
+        console.log('Service Worker: Кэширование всех файлов приложения');
+        return cache.addAll(urlsToCache);
       })
   );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker: Активация');
+  console.log('Service Worker: Активация новой версии');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -59,137 +38,57 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
-  self.clients.claim();
+  return self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
-  // Игнорируем запросы к расширениям и внешним доменам
-  if (event.request.url.includes('chrome-extension://') || 
-      event.request.url.includes('retagro.com') ||
-      !event.request.url.startsWith(self.location.origin)) {
+  // Игнорируем запросы, которые не являются GET
+  if (event.request.method !== 'GET') {
     return;
   }
 
-  // Проверяем флаг принудительного обновления
-  if (self.forceUpdate) {
-    event.respondWith(
-      fetch(event.request).then((response) => {
-        if (response && response.status === 200 && response.type === 'basic') {
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-        }
-        return response;
-      }).catch(() => {
-        return caches.match(event.request) || 
-               new Response('Content not available', { 
-                 status: 503,
-                 headers: { 'Content-Type': 'text/plain' }
-               });
-      })
-    );
-    return;
-  }
-
-  // Полностью cache-first стратегия - сначала кеш, затем сеть только если нет в кеше
+  // Стратегия "Cache Only". Всегда отвечаем из кэша.
   event.respondWith(
     caches.match(event.request)
       .then((cachedResponse) => {
         if (cachedResponse) {
+          // Ресурс найден в кэше, возвращаем его
           return cachedResponse;
+        } else {
+          // Ресурса нет в кэше. Возвращаем ошибку.
+          // Это предотвращает любые обращения к сети.
+          console.warn('Service Worker: Ресурс не найден в кэше:', event.request.url);
+          return new Response(
+            `Ресурс ${event.request.url} не найден в офлайн-кэше.`,
+            { status: 404, statusText: "Not Found in Cache" }
+          );
         }
-        
-        // Если нет в кеше, загружаем из сети только один раз и кешируем
-        return fetch(event.request)
-          .then((response) => {
-            if (response && response.status === 200 && response.type === 'basic') {
-              const responseToCache = response.clone();
-              caches.open(CACHE_NAME)
-                .then((cache) => {
-                  cache.put(event.request, responseToCache);
-                });
-            }
-            return response;
-          });
-      })
-      .catch(() => {
-        // Офлайн фолбэки
-        if (event.request.destination === 'document') {
-          return caches.match(`${BASE_PATH}/`) || 
-                 caches.match(`${BASE_PATH}/index.html`);
-        }
-        
-        if (event.request.destination === 'image') {
-          return caches.match(`${BASE_PATH}/placeholder.svg`);
-        }
-        
-        return new Response('Offline content not available', { 
-          status: 503,
-          headers: { 'Content-Type': 'text/plain' }
-        });
       })
   );
 });
 
-// Обработка сообщений от клиента
+// Механизм для принудительного обновления
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-  
   if (event.data && event.data.type === 'FORCE_UPDATE') {
-    self.forceUpdate = true;
-    // Очищаем кеш для принудительного обновления
+    console.log('Service Worker: Получена команда на принудительное обновление.');
+    // Удаляем текущий кэш, чтобы при следующей установке все скачалось заново
     caches.delete(CACHE_NAME).then(() => {
-      self.clients.matchAll().then(clients => {
-        clients.forEach(client => {
-          client.postMessage({ type: 'CACHE_CLEARED' });
-        });
+      // Пытаемся обновить сам Service Worker
+      self.registration.update().then(registration => {
+        // Если есть новый SW, он начнет устанавливаться
+        if (registration.installing) {
+          console.log('Service Worker: Найдена новая версия, начинается установка.');
+        } else if (registration.waiting) {
+          console.log('Service Worker: Новая версия уже ожидает, активируем.');
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        } else {
+          console.log('Service Worker: Новая версия не найдена на сервере.');
+        }
       });
     });
   }
-});
 
-// Синхронизация в фоне
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'background-sync') {
-    event.waitUntil(doBackgroundSync());
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
   }
-});
-
-function doBackgroundSync() {
-  // Здесь можно добавить логику синхронизации данных
-  return Promise.resolve();
-}
-
-// Push уведомления (если потребуется)
-self.addEventListener('push', (event) => {
-  const options = {
-    body: event.data ? event.data.text() : 'Новое уведомление',
-    icon: `${BASE_PATH}/placeholder.svg`,
-    badge: `${BASE_PATH}/placeholder.svg`,
-    vibrate: [100, 50, 100],
-    data: {
-      dateOfArrival: Date.now(),
-      primaryKey: 1
-    },
-    actions: [
-      {
-        action: 'explore',
-        title: 'Открыть',
-        icon: `${BASE_PATH}/placeholder.svg`
-      },
-      {
-        action: 'close',
-        title: 'Закрыть',
-        icon: `${BASE_PATH}/placeholder.svg`
-      }
-    ]
-  };
-
-  event.waitUntil(
-    self.registration.showNotification('Заметки', options)
-  );
 });
